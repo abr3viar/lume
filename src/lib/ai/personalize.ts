@@ -19,7 +19,15 @@ import { CONTEXT_SYSTEM, PERSONALIZE_SYSTEM, saasInfoBlock } from "./prompts";
 
 export class PersonalizationRejected extends Error {}
 
-const AGENT_HEADINGS = ["# Papel", "# Objetivo", "# Passo a passo", "# Formato de saída", "# Regras e limites", "# Critério de conclusão"];
+const AGENT_HEADINGS = [
+  "# Papel",
+  "# Objetivo",
+  "# Passo a passo",
+  "# Formato de saída",
+  "# Regras e limites",
+  "# Verificação antes de concluir",
+  "# Critério de conclusão",
+];
 
 /** Garante que a adaptação manteve estrutura, tamanho e não trouxe segredos. */
 export function validateAgentOutput(out: AgentPersonalization, template: string): AgentPersonalization {

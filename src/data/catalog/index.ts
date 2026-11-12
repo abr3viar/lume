@@ -19,6 +19,33 @@ import { skillsInput } from "./skills";
 export * from "./schema";
 export { discardedMcps } from "./mcps";
 
+/** Categorias cujos agentes mexem em código: a verificação exige rodar as ferramentas do projeto. */
+export const CODE_CATEGORIES = ["Engenharia", "Fundação", "Dados", "Operações"];
+
+export function isCodeAgent(agent: Pick<Agent, "category">) {
+  return CODE_CATEGORIES.includes(agent.category);
+}
+
+/** Verificação por evidência: o agente só conclui depois de mostrar o resultado. */
+export function verificationSection(agent: Pick<Agent, "category">): string {
+  if (isCodeAgent(agent)) {
+    return [
+      "Antes de dizer que terminou:",
+      "1. Rode os testes, o linter, o typecheck e o build do projeto, usando os comandos da seção \"Comandos do projeto\" do CLAUDE.md (se não houver, descubra no package.json ou equivalente e anote lá).",
+      "2. Mostre a saída resumida de cada comando (passou, falhou, quantos testes).",
+      "3. Se algo falhar por causa da sua mudança, corrija e rode de novo. Se falhar por outro motivo, explique e não esconda.",
+      "4. Nunca desligue, pule ou apague testes e regras de lint para fazer algo passar.",
+      "5. Se o projeto não tiver testes, diga isso claramente e explique como você conferiu o resultado.",
+    ].join("\n");
+  }
+  return [
+    "Antes de dizer que terminou:",
+    "1. Confira cada número, nome e afirmação contra a fonte (código, documento, dado ou página consultada) e cite onde conferiu.",
+    "2. Marque como hipótese tudo o que não pôde ser verificado.",
+    "3. Se você editou arquivos do projeto, rode o linter e os testes indicados no CLAUDE.md e mostre o resultado.",
+  ].join("\n");
+}
+
 /** Monta o system prompt completo e detalhado a partir da estrutura do agente. */
 export function renderSystemPrompt(agent: Agent): string {
   const p = agent.prompt;
@@ -28,6 +55,7 @@ export function renderSystemPrompt(agent: Agent): string {
     `# Passo a passo\n${p.steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}`,
     `# Formato de saída\n${p.output.map((o) => `- ${o}`).join("\n")}`,
     `# Regras e limites\n${p.rules.map((r) => `- ${r}`).join("\n")}\n- Responda sempre em português do Brasil.\n- Peça confirmação antes de alterar muitos arquivos ou executar ações irreversíveis.\n- Nunca escreva segredos em arquivos versionados.`,
+    `# Verificação antes de concluir\n${verificationSection(agent)}`,
     `# Critério de conclusão\n${p.done}`,
   ].join("\n\n");
 }

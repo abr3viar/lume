@@ -13,6 +13,7 @@ import {
 import { isSafeZipPath, slugify } from "@/lib/slug";
 import { frontmatter, yamlString } from "./frontmatter";
 import { redactSecrets } from "./secrets";
+import { detectStacks } from "./stacks";
 import { buildTree, renderTreeText } from "./tree";
 
 export type KitFile = { path: string; content: string };
@@ -206,6 +207,53 @@ function quickBlock(): string {
 `;
 }
 
+/** Marcador das partes do CLAUDE.md que o Claude completa lendo o projeto. */
+export const TO_FILL = "a preencher";
+
+/**
+ * Comandos, convenções de código e decisões de arquitetura.
+ * Comandos nunca são inventados: ficam marcados para o Claude descobrir no projeto
+ * (prompt de ativação) ou definir na fase de arquitetura (modo do zero).
+ */
+function projectSections(input: KitInput): string {
+  const { mode, saas } = input;
+  const stacks = detectStacks(saas);
+  const zero = mode === "zero";
+  const where = zero
+    ? `_${TO_FILL} na fase de arquitetura, depois do brief aprovado._`
+    : `_${TO_FILL} pelo Claude lendo ${stacks.length ? [...new Set(stacks.flatMap((s) => s.commandSources))].join(", ") : "os arquivos de configuração do projeto (ex.: `package.json`, `pyproject.toml`, `Makefile`)"}; mostrar ao usuário antes de gravar._`;
+
+  const conventions = stacks.length
+    ? stacks
+        .map((s) => `**${s.label}**\n${s.conventions.map((c) => `- ${c}`).join("\n")}`)
+        .join("\n\n")
+    : `_${TO_FILL}: descrever nomenclatura, estrutura de pastas e tratamento de erro ${zero ? "quando a stack for escolhida" : "observando o código existente"}._`;
+
+  return `## Comandos do projeto
+
+${where}
+
+| Para quê | Comando |
+|---|---|
+| Instalar dependências | _${TO_FILL}_ |
+| Rodar em desenvolvimento | _${TO_FILL}_ |
+| Testes | _${TO_FILL}_ |
+| Lint | _${TO_FILL}_ |
+| Typecheck | _${TO_FILL}_ |
+| Build | _${TO_FILL}_ |
+
+## Convenções de código
+
+${conventions}
+
+Siga sempre o padrão que já existe no código ao redor. Quando o projeto contradisser algo daqui, o projeto vence; atualize esta seção.
+
+## Decisões de arquitetura
+
+${zero ? `_${TO_FILL} no fim da descoberta: stack, hospedagem, banco, autenticação e pagamentos, com o motivo de cada escolha._` : `_${TO_FILL} pelo Claude: as decisões que o código já mostra (framework, banco, autenticação, onde ficam as regras de negócio), em uma linha cada, com o motivo quando souber._`}
+`;
+}
+
 export function claudeMd(input: KitInput): string {
   const { saas, mode } = input;
   const ctx = input.context;
@@ -292,7 +340,9 @@ Antes de usar um MCP que escreve dados, explique ao usuário o que vai fazer e p
 `);
   }
 
-  parts.push(`## Convenções
+  parts.push(projectSections(input));
+
+  parts.push(`## Convenções de trabalho
 
 - Responda sempre em português do Brasil, com clareza e sem jargão desnecessário.
 - Peça confirmação antes de alterar muitos arquivos de uma vez, apagar algo ou rodar comandos irreversíveis.
@@ -301,6 +351,27 @@ Antes de usar um MCP que escreve dados, explique ao usuário o que vai fazer e p
 - Prefira mudanças pequenas e revisáveis, uma de cada vez, explicando o que mudou.
 - Quando não tiver certeza de um comando, pacote ou API, consulte a documentação oficial em vez de supor.
 - Os agentes, skills e MCPs deste kit são pontos de partida: adapte-os ao projeto conforme ele evolui.
+`);
+
+  parts.push(`## O que NÃO fazer
+
+- Não commitar \`.env\`, chaves, tokens ou dados de clientes, nem colar segredos em código, logs ou mensagens.
+- Não instalar, remover ou atualizar dependências sem pedir antes e explicar o motivo.
+- Não rodar comandos destrutivos sem confirmação explícita: \`rm -rf\`, \`git push --force\`, \`git reset --hard\`, \`DROP\`/\`TRUNCATE\`, apagar branches ou bancos.
+- Não editar migrações de banco já aplicadas; crie uma nova.
+- Não desligar, pular ou apagar testes, tipos ou regras de lint para fazer algo passar.
+- Não mexer em arquivos fora do escopo pedido nem refatorar "de passagem".
+- Não inventar APIs, pacotes, comandos ou opções: confirme na documentação ou no código.
+- Não dizer que terminou sem mostrar o resultado da verificação (seção abaixo).
+`);
+
+  parts.push(`## Verificação antes de dizer que terminou
+
+1. Rode os comandos de teste, lint, typecheck e build da seção "Comandos do projeto".
+2. Mostre o resultado resumido de cada um (passou, falhou, quantos testes).
+3. Se algo falhar por causa da mudança, corrija e rode de novo. Se falhar por outro motivo, explique.
+4. Se o projeto não tiver testes ou algum desses comandos, diga isso e explique como conferiu o resultado.
+5. Termine com um resumo: o que mudou, arquivos alterados e como a pessoa pode conferir.
 `);
 
   return parts.join("\n");
@@ -419,10 +490,10 @@ _${brand.generatedBy}._ Copie tudo que está dentro do bloco abaixo e cole no Cl
 Olá! Preciso consertar um erro no ${saas.name}. O MODO CONSERTO está ativo no CLAUDE.md.
 
 1. Leia o CLAUDE.md e o TAREFA.md, com a descrição do erro e como reproduzir.
-2. Olhe a estrutura do projeto só o necessário para achar o código envolvido.
+2. Olhe a estrutura do projeto só o necessário para achar o código envolvido e descobrir os comandos de teste, lint e build (package.json ou equivalente). Anote-os na tabela "Comandos do projeto" do CLAUDE.md, me mostrando antes de gravar.
 3. Reproduza o erro (de preferência com um teste que falha). Se faltar informação, me pergunte antes.
 4. Me explique a causa raiz com o arquivo e a linha, e proponha a correção mínima. Espere minha aprovação.
-5. Aplique a correção, adicione um teste de regressão e rode os testes do projeto.
+5. Aplique a correção, adicione um teste de regressão e rode testes, lint e typecheck. Me mostre o resultado.
 6. Termine com um resumo: causa, correção, arquivos alterados, como eu confiro e uma sugestão de mensagem de commit.
 ${hasMcps ? "7. Se algum MCP do .mcp.json ajudar (ex.: logs de erro), me diga como conectar. Nunca me peça senhas ou chaves aqui no chat.\n" : ""}
 Não mexa em nada que não tenha relação com o erro. Fale comigo em português e no nível ${level}.
@@ -434,10 +505,10 @@ Não mexa em nada que não tenha relação com o erro. Fale comigo em português
 Olá! Quero fazer uma atualização rápida no ${saas.name}. O MODO AJUSTE RÁPIDO está ativo no CLAUDE.md.
 
 1. Leia o CLAUDE.md e o TAREFA.md, com a mudança que eu quero.
-2. Encontre no código exatamente onde a mudança acontece.
+2. Encontre no código exatamente onde a mudança acontece e descubra os comandos de teste, lint e build (package.json ou equivalente). Anote-os na tabela "Comandos do projeto" do CLAUDE.md, me mostrando antes de gravar.
 3. Me mostre um plano curto: quais arquivos mudam e o que muda em cada um. Espere minha aprovação.
 4. Faça só o que foi pedido, seguindo o estilo do código ao redor. Se crescer além de poucos arquivos, pare e me avise.
-5. Rode o lint, os testes e o build que o projeto tiver.
+5. Rode o lint, os testes, o typecheck e o build que o projeto tiver, e me mostre o resultado.
 6. Termine com um resumo do que mudou, como eu confiro e uma sugestão de mensagem de commit.
 
 Fale comigo em português e no nível ${level}.
@@ -452,21 +523,27 @@ Olá! Vamos começar o ${saas.name} do zero, juntos.
 2. O MODO DESCOBERTA está ativo. Antes de criar qualquer arquivo de projeto, instalar dependências ou rodar comandos, me entreviste sobre o SaaS seguindo as regras do CLAUDE.md: blocos de no máximo 4 perguntas, confirmando o que já está no BRIEFING.md.
 3. Ao terminar, use a skill brief-do-projeto (se estiver instalada) para consolidar tudo em um Brief do Projeto, atualize o BRIEFING.md e o CLAUDE.md e me peça aprovação.
 4. Com o brief aprovado, proponha a arquitetura e a stack com prós e contras${input.agents.some((a) => a.item.id === "arquiteto-produto") ? " (use o agente arquiteto-produto)" : ""}, e um plano de construção por etapas dizendo qual agente ou skill entra em cada etapa.
-5. Espere minha aprovação do plano. Depois, execute uma etapa por vez, resumindo o que foi feito e pedindo confirmação antes da próxima.
-${hasMcps ? "6. Verifique quais MCPs precisam de credencial ou login e me oriente a configurar. Nunca me peça para colar chaves ou senhas aqui no chat.\n" : ""}
+5. Espere minha aprovação do plano. Com a arquitetura aprovada, preencha no CLAUDE.md as seções "Comandos do projeto", "Convenções de código" e "Decisões de arquitetura".
+6. Execute uma etapa por vez. Ao fim de cada uma, mostre o resultado dos testes, do lint e do typecheck e peça confirmação antes da próxima.
+${hasMcps ? "7. Verifique quais MCPs precisam de credencial ou login e me oriente a configurar. Nunca me peça para colar chaves ou senhas aqui no chat.\n" : ""}
 Fale comigo em português e no nível ${TECH_LABEL[tech(saas)].toLowerCase()}.
 \`\`\`
 `;
   }
+  const steps = [
+    `Leia o CLAUDE.md, os agentes em .claude/agents/, as skills em .claude/skills/${hasMcps ? " e o .mcp.json" : ""}.`,
+    "Analise o código lendo o package.json (ou equivalente), a árvore de pastas e os arquivos de configuração: stack, dependências, rotas, modelo de dados, testes e scripts.",
+    "Escreva um Brief do Projeto curto (o que é, stack real, principais módulos, riscos que você notou).",
+    `Proponha o texto das seções do CLAUDE.md marcadas "${TO_FILL}": Comandos do projeto (rode os de teste e lint uma vez para confirmar que funcionam), Convenções de código (observadas no código, não genéricas) e Decisões de arquitetura. Me mostre a proposta e só grave depois da minha aprovação.`,
+    "Adapte os agentes e as skills à realidade do código: caminhos, comandos, convenções e ferramentas. Me mostre um resumo do que vai mudar antes de editar.",
+    ...(hasMcps ? ["Verifique quais MCPs precisam de credenciais ou login e me oriente a configurar. Nunca me peça para colar chaves ou senhas aqui no chat."] : []),
+    `Proponha um plano com a ordem de execução: qual agente ou skill usar primeiro e por quê, ligado ao objetivo do momento${saas.goal ? ` ("${saas.goal.replace(/\s+/g, " ")}")` : ""}.`,
+    "Espere minha aprovação. Depois, execute um item por vez e, ao fim de cada um, mostre o resultado dos testes, do lint e do typecheck antes de dizer que terminou.",
+  ];
   return `${header}\`\`\`text
 Olá! Instalei um kit de agentes, skills${hasMcps ? " e MCPs" : ""} para o ${saas.name}. Quero que você adapte esse kit ao meu projeto.
 
-1. Leia o CLAUDE.md, os agentes em .claude/agents/, as skills em .claude/skills/${hasMcps ? " e o .mcp.json" : ""}.
-2. Analise o código: estrutura de pastas, stack, dependências, rotas, modelo de dados, testes e scripts.
-3. Escreva um Brief do Projeto curto (o que é, stack real, principais módulos, riscos que você notou) e atualize a seção de contexto do CLAUDE.md com o que descobrir.
-4. Adapte os agentes e as skills à realidade do código: caminhos, comandos de teste e build, convenções e ferramentas. Edite os arquivos e me mostre um resumo do que mudou.
-${hasMcps ? "5. Verifique quais MCPs precisam de credenciais ou login e me oriente a configurar. Nunca me peça para colar chaves ou senhas aqui no chat.\n6" : "5"}. Proponha um plano com a ordem de execução: qual agente ou skill usar primeiro e por quê, ligado ao objetivo do momento${saas.goal ? ` ("${saas.goal.replace(/\s+/g, " ")}")` : ""}.
-${hasMcps ? "7" : "6"}. Espere minha aprovação. Depois, execute um item por vez, resumindo cada etapa e pedindo confirmação antes de seguir.
+${steps.map((s, i) => `${i + 1}. ${s}`).join("\n")}
 
 Fale comigo em português e no nível ${TECH_LABEL[tech(saas)].toLowerCase()}.
 \`\`\`
