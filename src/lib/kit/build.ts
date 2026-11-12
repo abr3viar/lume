@@ -1,6 +1,7 @@
 import { brand } from "@/config/brand";
 import type { CatalogAgent, Mcp, Skill } from "@/data/catalog";
 import { agentById, mcpById, skillById } from "@/data/catalog";
+import { agentDescription } from "@/data/catalog/triggers";
 import {
   isTaskMode,
   STAGE_LABEL,
@@ -113,8 +114,10 @@ function envVars(mcps: Mcp[]) {
 export function agentFile(a: KitAgent): KitFile {
   const fm = frontmatter({
     name: a.item.id,
-    description: yamlString(a.description),
+    // "Quando usar" + exemplos de pedido: é por aqui que o Claude decide delegar.
+    description: yamlString(a.description.includes("Exemplos de pedido:") ? a.description : agentDescription(a.description, a.item.id)),
     tools: a.item.tools.join(", "),
+    permissionMode: a.item.permissionMode,
   });
   return { path: `.claude/agents/${a.item.id}.md`, content: `${fm}\n${a.prompt.trim()}\n` };
 }

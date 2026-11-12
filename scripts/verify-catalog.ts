@@ -4,6 +4,7 @@
  * Uso: npm run verify:catalog
  */
 import { agents, catalogStats, mcps, presets, skills } from "../src/data/catalog";
+import { catalogQualityIssues } from "../src/data/catalog/quality";
 import { agentFile, skillFiles, mcpJson } from "../src/lib/kit/build";
 import { parseFrontmatter } from "../src/lib/kit/frontmatter";
 import { findSecrets } from "../src/lib/kit/secrets";
@@ -48,6 +49,9 @@ for (const m of mcps) {
 const json = JSON.parse(mcpJson(mcps));
 if (Object.keys(json.mcpServers).length !== mcps.length) fail("mcpJson perdeu servidores");
 if (findSecrets(JSON.stringify(json)).length) fail("Configuração de MCP com aparência de segredo");
+
+// Qualidade: gatilhos concretos, exemplos de pedido e permissões mínimas.
+for (const issue of catalogQualityIssues(agents, skills)) fail(issue);
 
 if (errors.length) {
   console.error(`\n✘ Catálogo inválido (${errors.length} problemas):`);

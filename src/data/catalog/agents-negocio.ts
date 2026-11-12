@@ -139,7 +139,9 @@ export const businessAgents: AgentInput[] = [
     tags: ["churn", "retenção", "cancelamento"],
     appliesTo: "ambos",
     stages: ["primeiros-clientes", "crescimento"],
-    tools: [...DOC_TOOLS, "Bash"],
+    tools: ["Read", "Grep", "Glob", "Bash"],
+    access: "leitura",
+    permissionMode: "plan",
     effort: "médio",
     overlapsWith: ["customer-success"],
     prompt: {
@@ -502,7 +504,9 @@ export const businessAgents: AgentInput[] = [
     tags: ["mrr", "ltv", "cac", "métricas"],
     appliesTo: "ambos",
     stages: ["primeiros-clientes", "crescimento"],
-    tools: [...DOC_TOOLS, "Bash"],
+    tools: ["Read", "Grep", "Glob", "Bash"],
+    access: "leitura",
+    permissionMode: "plan",
     effort: "médio",
     overlapsWith: ["analista-dados-sql"],
     prompt: {
@@ -581,7 +585,8 @@ export const businessAgents: AgentInput[] = [
     tags: ["concorrência", "posicionamento", "mercado"],
     appliesTo: "ambos",
     stages: ["ideia", "mvp", "primeiros-clientes", "crescimento"],
-    tools: [...CONTENT_TOOLS],
+    tools: ["Read", "Grep", "Glob", "WebSearch", "WebFetch"],
+    access: "leitura",
     effort: "fácil",
     prompt: {
       role: "Você é um analista de inteligência competitiva. Trabalha com fontes públicas e separa fato de opinião.",

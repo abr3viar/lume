@@ -99,7 +99,7 @@ describe("frontmatter de agentes e skills", () => {
     const input = baseKitInput("existente", saasExisting, { agents: ["suporte-cliente"], skills: [], mcps: [] }, NOW);
     input.agents[0].description = 'Use quando: o cliente diz "socorro" \\ urgente';
     const fm = parseFrontmatter(buildKitFiles(input)[0].content)!;
-    expect(fm.data.description).toBe('Use quando: o cliente diz "socorro" \\ urgente');
+    expect(fm.data.description.startsWith('Use quando: o cliente diz "socorro" \\ urgente Exemplos de pedido: "')).toBe(true);
   });
 });
 

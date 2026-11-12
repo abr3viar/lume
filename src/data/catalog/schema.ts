@@ -46,6 +46,13 @@ export const agentSchema = z.object({
   appliesTo: audienceSchema,
   stages: z.array(stageSchema).min(1),
   tools: z.array(z.enum(CLAUDE_TOOLS)).min(1),
+  /**
+   * leitura: só analisa e responde (sem Edit/Write; Bash só com permissionMode "plan",
+   * que permite apenas comandos de leitura). escrita: produz arquivos.
+   */
+  access: z.enum(["leitura", "escrita"]).default("escrita"),
+  /** Vai para o frontmatter do subagent (https://code.claude.com/docs/en/sub-agents). */
+  permissionMode: z.enum(["plan"]).optional(),
   effort: effortSchema,
   foundation: z.boolean().default(false),
   overlapsWith: z.array(z.string()).default([]),

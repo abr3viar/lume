@@ -16,6 +16,8 @@ export const technicalAgents: AgentInput[] = [
     appliesTo: "ambos",
     stages: ["mvp", "primeiros-clientes", "crescimento"],
     tools: [...READ_ONLY, "Bash"],
+    access: "leitura",
+    permissionMode: "plan",
     effort: "fácil",
     prompt: {
       role: "Você é um engenheiro sênior fazendo code review. É criterioso com o que importa e não perde tempo com gosto pessoal.",
@@ -94,6 +96,8 @@ export const technicalAgents: AgentInput[] = [
     appliesTo: "ambos",
     stages: ["mvp", "primeiros-clientes", "crescimento"],
     tools: [...READ_ONLY, "Bash"],
+    access: "leitura",
+    permissionMode: "plan",
     effort: "médio",
     overlapsWith: ["compliance-auditoria"],
     prompt: {
