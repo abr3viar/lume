@@ -7,12 +7,23 @@ import { toast } from "sonner";
 import { Spark } from "@/components/logo";
 import { Button } from "@/components/ui/button";
 import { brand } from "@/config/brand";
-import { extractPromptBlock, generateKit, type GenerateResult, type GenProgress } from "@/lib/client/generate";
+import { extractPromptBlock, KitGeneration, type GenerateResult, type GenProgress } from "@/lib/client/generate";
 import { saasInfoSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { formToInput, useKit } from "@/store/kit-store";
 import { ModeBadge } from "./mode-badge";
 import { StepHeader } from "./step-header";
+
+function downloadBlob(blob: Blob, name: string) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 function TaskIcon({ state }: { state: GenProgress["tasks"][number]["state"] }) {
   if (state === "ok") return <Check className="size-4 text-ok" strokeWidth={3} aria-label="Concluído" />;
@@ -22,7 +33,7 @@ function TaskIcon({ state }: { state: GenProgress["tasks"][number]["state"] }) {
   return <Circle className="size-3.5 text-line-strong" aria-label="Na fila" />;
 }
 
-function Success({ result, onReset }: { result: GenerateResult; onReset: () => void }) {
+function Success({ result, onReset, onRetry }: { result: GenerateResult; onReset: () => void; onRetry: () => void }) {
   const reduce = useReducedMotion();
   const mode = useKit((s) => s.mode);
   const url = useMemo(() => URL.createObjectURL(result.zip), [result.zip]);
@@ -73,13 +84,21 @@ function Success({ result, onReset }: { result: GenerateResult; onReset: () => v
             </Button>
           </div>
           {result.fallbacks.length > 0 && (
-            <p className="mt-6 flex max-w-xl gap-2 rounded-2xl bg-warn-bg p-4 text-sm text-warn-ink">
-              <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
-              <span>
-                {result.fallbacks.join(", ")} {result.fallbacks.length === 1 ? "foi incluído" : "foram incluídos"} com o
-                modelo base, que já funciona. O LEIA-ME registra isso, e você pode pedir ao Claude para adaptar depois.
-              </span>
-            </p>
+            <div className="mt-6 max-w-xl rounded-2xl bg-warn-bg p-4 text-sm text-warn-ink" role="status" data-testid="fallbacks">
+              <p className="flex gap-2">
+                <Info className="mt-0.5 size-4 shrink-0" aria-hidden />
+                <span>
+                  <strong className="font-semibold">{result.fallbacks.join(", ")}</strong>{" "}
+                  {result.fallbacks.length === 1 ? "ficou" : "ficaram"} com o modelo base, que já funciona. O LEIA-ME registra
+                  isso.
+                </span>
+              </p>
+              {result.fallbackKeys.length > 0 && (
+                <Button variant="outline" size="sm" className="mt-3 bg-bg" onClick={onRetry}>
+                  <RefreshCw /> Tentar de novo só {result.fallbackKeys.length === 1 ? "este item" : `estes ${result.fallbackKeys.length} itens`}
+                </Button>
+              )}
+            </div>
           )}
         </div>
         <div className="rounded-3xl border border-line bg-surface p-7">
@@ -116,6 +135,7 @@ export function StepGenerate() {
   const [failed, setFailed] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const ctrl = useRef<AbortController | null>(null);
+  const gen = useRef<KitGeneration | null>(null);
 
   useEffect(() => {
     const parsed = saasInfoSchema.safeParse(formToInput(form));
@@ -125,11 +145,13 @@ export function StepGenerate() {
     }
     const c = new AbortController();
     ctrl.current = c;
-    generateKit(
+    const g = new KitGeneration(
       { mode, saas: parsed.data, ids: { agents: cart.agent, skills: cart.skill, mcps: cart.mcp }, ai },
       (p) => !c.signal.aborted && setProgress(p),
-      c.signal,
-    )
+    );
+    gen.current = g;
+    g.run(c.signal)
+      .then(() => g.pack())
       .then((r) => !c.signal.aborted && setResult(r))
       .catch(() => !c.signal.aborted && setFailed(true));
     return () => c.abort();
@@ -137,10 +159,38 @@ export function StepGenerate() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [attempt]);
 
+  /** Tenta de novo só os itens que ficaram com o modelo base. */
+  const retryFailed = () => {
+    const g = gen.current;
+    if (!g) return;
+    const c = new AbortController();
+    ctrl.current = c;
+    setResult(null);
+    g.retryFailed(c.signal)
+      .then(() => g.pack())
+      .then((r) => {
+        if (c.signal.aborted) return;
+        setResult(r);
+        toast.success(r.fallbacks.length ? `${r.fallbacks.length} ainda com o modelo base` : "Todos os itens personalizados");
+      })
+      .catch(() => !c.signal.aborted && setFailed(true));
+  };
+
+  /** Baixa o que já está pronto, sem esperar o fim: o resto vai com o modelo base. */
+  const downloadPartial = async () => {
+    const g = gen.current;
+    if (!g) return;
+    const r = await g.pack();
+    downloadBlob(r.zip, r.fileName);
+    const pending = r.fallbacks.length;
+    toast.success(pending ? `Zip parcial baixado: ${pending} ${pending === 1 ? "item ainda está" : "itens ainda estão"} com o modelo base` : "Zip baixado");
+  };
+
   if (result) {
     return (
       <Success
         result={result}
+        onRetry={retryFailed}
         onReset={() => {
           reset();
           toast("Tudo limpo. Vamos montar um kit novo.");
@@ -218,16 +268,27 @@ export function StepGenerate() {
             ))}
           </ul>
 
-          <Button
-            variant="ghost"
-            className="mt-8"
-            onClick={() => {
-              ctrl.current?.abort();
-              setStep(4);
-            }}
-          >
-            Cancelar
-          </Button>
+          <div className="mt-8 flex flex-wrap items-center gap-3">
+            {ai && (
+              <Button variant="outline" disabled={!progress || progress.done === 0} onClick={downloadPartial}>
+                <Download /> Baixar o que já está pronto
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              onClick={() => {
+                ctrl.current?.abort();
+                setStep(4);
+              }}
+            >
+              Cancelar
+            </Button>
+          </div>
+          {ai && progress && (
+            <p className="mt-3 text-xs text-ink-3">
+              {progress.concurrency} {progress.concurrency === 1 ? "item por vez" : "itens ao mesmo tempo"}. Itens que ainda não terminaram vão com o modelo base no download parcial.
+            </p>
+          )}
         </div>
       )}
     </div>
