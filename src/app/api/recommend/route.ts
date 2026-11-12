@@ -1,4 +1,4 @@
-import { friendlyError, hasApiKey } from "@/lib/ai/client";
+import { aiAvailable, friendlyError } from "@/lib/ai/client";
 import { streamRecommendations } from "@/lib/ai/recommend";
 import { jsonError, readJson } from "@/lib/http";
 import { clientIp, LIMITS, rateLimit } from "@/lib/rate-limit";
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       };
       try {
         // Sem chave de API, o recomendador local do Lume responde (de graça, determinístico).
-        if (!hasApiKey()) return sendLocal();
+        if (!aiAvailable()) return sendLocal();
         send({ type: "meta", source: "ia" });
         let count = 0;
         try {

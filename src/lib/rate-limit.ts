@@ -57,6 +57,10 @@ async function upstashLimit(key: string, limit: number, windowSec: number): Prom
 
 export async function rateLimit(bucket: string, ip: string, limit: number, windowSec: number): Promise<Result> {
   const key = `lume:rl:${bucket}:${ip}`;
+  // Rodando no seu PC com o Claude Code: o limite de uso é o da sua conta, não o do site.
+  if (process.env.LUME_AI_PROVIDER?.trim() === "claude-code" && !process.env.VERCEL) {
+    return { ok: true, remaining: limit, resetSeconds: 0 };
+  }
   return (await upstashLimit(key, limit, windowSec)) ?? memoryLimit(key, limit, windowSec);
 }
 

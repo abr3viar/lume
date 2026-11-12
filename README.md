@@ -4,9 +4,41 @@
 
 O nome e os textos da marca ficam em [`src/config/brand.ts`](src/config/brand.ts). A cor principal fica em `--brand` em [`src/app/globals.css`](src/app/globals.css).
 
-## Rodar localmente
+## Modos de IA
 
-Requisitos: Node.js 20.9 ou superior (desenvolvido com Node 24) e npm.
+O Lume escolhe o modo automaticamente, nesta ordem:
+
+| Modo | Quando | Custo |
+|---|---|---|
+| **Claude Code local** | `LUME_AI_PROVIDER=claude-code` e o Lume rodando no seu PC | Usa a sua conta do Claude (o mesmo uso do Claude Code) |
+| **API da Anthropic** | `ANTHROPIC_API_KEY` configurada | Cobrado por uso no Console da Anthropic |
+| **Sem IA** | nada configurado (é o modo da versão publicada) | Grátis: recomendador local e modelos base |
+
+No modo sem IA, as sugestões vêm de um recomendador determinístico que cruza nicho, modelo de negócio, estágio, objetivo e stack, e o kit sai com os modelos base. A adaptação ao projeto acontece no próprio Claude Code, pelo prompt de ativação. Se a IA falhar sem devolver nada, o Lume cai nesse modo sozinho.
+
+## Rodar no seu PC com o Claude Code (recomendado)
+
+Requisitos: Node.js 20.9 ou superior e o [Claude Code](https://code.claude.com/docs/en/setup) instalado e logado (rode `claude` uma vez no terminal).
+
+```bash
+git clone <url-deste-repositorio> lume
+cd lume
+npm install
+cp .env.example .env.local
+```
+
+No `.env.local`, descomente `LUME_AI_PROVIDER=claude-code`. Depois:
+
+```bash
+npm run build
+npm start
+```
+
+Abra http://localhost:3000. No Windows, dê dois cliques em `Lume.cmd`: ele instala, prepara e abre o navegador sozinho. Depois de atualizar o código (`git pull`), rode `npm run build` de novo.
+
+**Como funciona:** o servidor do Lume chama `claude -p` em modo headless, com um system prompt próprio, sem ferramentas (`--tools ""`), sem MCPs (`--strict-mcp-config`), sem salvar sessão e numa pasta temporária vazia. O Claude só lê o texto que o Lume manda e devolve texto; não acessa seus arquivos. O código está em [`src/lib/ai/claude-code.ts`](src/lib/ai/claude-code.ts). Esse modo nunca é ativado na Vercel.
+
+## Rodar com a API
 
 ```bash
 npm install
@@ -14,11 +46,11 @@ cp .env.example .env.local   # preencha ANTHROPIC_API_KEY
 npm run dev                  # http://localhost:3000
 ```
 
-Sem `ANTHROPIC_API_KEY`, o site funciona, mas as rotas de IA respondem com uma mensagem amigável de indisponibilidade.
-
 | Variável | Obrigatória | Padrão | Para quê |
 |---|---|---|---|
-| `ANTHROPIC_API_KEY` | sim | | Chave da API, usada só no servidor |
+| `LUME_AI_PROVIDER` | não | | `claude-code` liga o modo local |
+| `LUME_CLAUDE_MODEL` / `LUME_CLAUDE_MODEL_FAST` | não | `sonnet` / `haiku` | Modelos no modo Claude Code |
+| `ANTHROPIC_API_KEY` | não | | Chave da API, usada só no servidor |
 | `ANTHROPIC_MODEL` | não | `claude-sonnet-5-5` | Recomendações |
 | `ANTHROPIC_MODEL_FAST` | não | `claude-haiku-5-5` | Personalização em massa |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | não | | Rate limit compartilhado (sem elas: em memória, best-effort) |
@@ -59,11 +91,15 @@ src/
 
 **Geração sem timeout.** O navegador orquestra: uma chamada a `/api/personalize` por agente e skill, com concorrência 3, retry com backoff e fallback para o template base (registrado no LEIA-ME). O contexto do `CLAUDE.md` e do LEIA-ME tem chamada própria. O zip é montado no navegador com JSZip.
 
-**Segurança.** A chave da Anthropic só existe no servidor (`server-only`). O kit nunca leva segredos: credenciais como `${VAR}` no `.mcp.json`, `.env.example` vazio e varredura de padrões de chaves antes do zip. Headers de segurança e CSP em `next.config.ts`. Caminhos do zip validados contra path traversal.
+**Segurança.** Nenhum dado sai do seu navegador além do que você digita no assistente, enviado às rotas do próprio Lume. A chave da Anthropic, quando usada, só existe no servidor (`server-only`). O kit nunca leva segredos: credenciais como `${VAR}` no `.mcp.json`, `.env.example` vazio e varredura de padrões de chaves antes do zip. Headers de segurança e CSP em `next.config.ts`. Caminhos do zip validados contra path traversal.
 
 ## Próximos passos (pontos marcados no código)
 
 Login, histórico de kits e pagamento entrariam nas rotas de API (comentários em `src/app/api/*/route.ts`). O catálogo de MCPs pode ganhar uma verificação automática periódica das URLs de documentação.
+
+## Licença
+
+[MIT](LICENSE).
 
 ---
 

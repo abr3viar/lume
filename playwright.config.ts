@@ -23,5 +23,7 @@ export default defineConfig({
         url: `http://localhost:${PORT}`,
         reuseExistingServer: !process.env.CI,
         timeout: 120_000,
+        // Os testes nunca usam o Claude Code local nem a API: a IA é mockada ou fica desligada.
+        env: { LUME_AI_PROVIDER: "off", ANTHROPIC_API_KEY: "" },
       },
 });

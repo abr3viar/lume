@@ -21,7 +21,7 @@ export type GenTask = {
 export type GenProgress = { tasks: GenTask[]; done: number; total: number; current: string | null };
 
 const CONCURRENCY = 3;
-const TIMEOUT_MS = 55_000;
+const TIMEOUT_MS = 115_000;
 
 class HttpError extends Error {
   constructor(public status: number) {

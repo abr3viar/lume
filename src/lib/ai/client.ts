@@ -1,5 +1,6 @@
 import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
+import { ClaudeCodeError, claudeCodeEnabled } from "./claude-code";
 
 /** Modelos vêm do ambiente; nada fixo no código além dos padrões documentados. */
 export function models() {
@@ -11,6 +12,11 @@ export function models() {
 
 export function hasApiKey() {
   return Boolean(process.env.ANTHROPIC_API_KEY?.trim());
+}
+
+/** Há IA disponível: Claude Code local (no seu PC) ou chave da API. */
+export function aiAvailable() {
+  return claudeCodeEnabled() || hasApiKey();
 }
 
 let client: Anthropic | null = null;
@@ -41,6 +47,10 @@ export function supportsBetweenTools(model: string) {
 
 /** Converte erros do SDK em status HTTP e mensagens amigáveis (sem vazar detalhes). */
 export function friendlyError(err: unknown): { status: number; message: string } {
+  if (err instanceof ClaudeCodeError) {
+    const status = err.kind === "limite" ? 429 : err.kind === "tempo" ? 504 : 502;
+    return { status, message: err.message };
+  }
   if (err instanceof MissingKeyError) {
     return { status: 503, message: "A IA ainda não está configurada neste ambiente. Tente de novo mais tarde." };
   }

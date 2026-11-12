@@ -3,6 +3,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import { catalogSummaryForAI, type ItemKind } from "@/data/catalog";
 import type { RecommendRequest } from "@/lib/schemas";
+import { ClaudeCodeError, claudeCodeEnabled, claudeCodeModels, streamClaudeCode } from "./claude-code";
 import { getClient, models, supportsBetweenTools, supportsServerFallback } from "./client";
 import { LineBuffer } from "./parse";
 import { RECOMMEND_SYSTEM, recommendUserPrompt, saasInfoBlock } from "./prompts";
@@ -25,11 +26,59 @@ function catalogFor(req: RecommendRequest, extraExclude: Partial<Record<ItemKind
 }
 
 /**
+ * Mesma lógica usando o Claude Code local (`claude -p`), sem chave de API.
+ * Uma chamada em streaming e, se faltar algum tipo, uma nova tentativa pedindo só o que faltou.
+ */
+async function* streamRecommendationsClaudeCode(req: RecommendRequest, signal?: AbortSignal): AsyncGenerator<RecommendedItem> {
+  const { main } = claudeCodeModels();
+  const filter = new RecommendationFilter(req);
+  const saasBlock = saasInfoBlock(req.saas, req.mode);
+  const run = async function* (kinds: ItemKind[], counts: ReturnType<typeof countsFor>, extra: Partial<Record<ItemKind, string[]>>) {
+    const lines = new LineBuffer();
+    const prompt = recommendUserPrompt({ saasBlock, catalog: catalogFor({ ...req, kinds }, extra), counts });
+    for await (const chunk of streamClaudeCode({ system: RECOMMEND_SYSTEM, prompt, model: main, signal })) {
+      for (const line of lines.push(chunk)) {
+        const item = filter.acceptLine(line);
+        if (item) yield item;
+      }
+    }
+    for (const line of lines.flush()) {
+      const item = filter.acceptLine(line);
+      if (item) yield item;
+    }
+  };
+
+  let firstError: unknown = null;
+  try {
+    yield* run(req.kinds, countsFor(req), {});
+  } catch (err) {
+    if (signal?.aborted) return;
+    firstError = err;
+  }
+  const missing = filter.missing();
+  const kinds = Object.keys(missing) as ItemKind[];
+  if (kinds.length && !(firstError instanceof ClaudeCodeError && firstError.kind !== "falha")) {
+    try {
+      const counts = Object.fromEntries(kinds.map((k) => [k, [missing[k]!, missing[k]! + 2]]));
+      yield* run(kinds, counts, Object.fromEntries(kinds.map((k) => [k, filter.acceptedIds(k)])));
+    } catch (err) {
+      if (filter.total() === 0) throw firstError ?? err;
+    }
+  }
+  if (filter.total() === 0 && firstError) throw firstError;
+}
+
+/** Escolhe o provedor: Claude Code local (se ativado) ou API da Anthropic. */
+export function streamRecommendations(req: RecommendRequest, signal?: AbortSignal): AsyncGenerator<RecommendedItem> {
+  return claudeCodeEnabled() ? streamRecommendationsClaudeCode(req, signal) : streamRecommendationsApi(req, signal);
+}
+
+/**
  * Gera recomendações em streaming. Cada linha NDJSON válida vira um item assim que chega.
  * Se algum tipo ficar abaixo do mínimo (ou o streaming falhar), faz 1 nova tentativa
  * com saída estruturada pedindo só o que faltou.
  */
-export async function* streamRecommendations(req: RecommendRequest, signal?: AbortSignal): AsyncGenerator<RecommendedItem> {
+async function* streamRecommendationsApi(req: RecommendRequest, signal?: AbortSignal): AsyncGenerator<RecommendedItem> {
   const client = getClient();
   const { main } = models();
   const filter = new RecommendationFilter(req);
