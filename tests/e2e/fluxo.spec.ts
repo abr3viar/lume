@@ -88,7 +88,8 @@ test("modo projeto existente: do formulário ao zip", async ({ page }) => {
   // Geração com progresso real e fallback por item.
   await page.getByRole("button", { name: "Gerar meu kit" }).click();
   await expect(page.getByRole("heading", { name: "Tudo aceso! Seu kit está pronto." })).toBeVisible({ timeout: 30_000 });
-  await expect(page.getByText(/Churn e retenção foi incluído com o\s+modelo base/)).toBeVisible();
+  await expect(page.getByTestId("fallbacks")).toContainText("Churn e retenção");
+  await expect(page.getByTestId("fallbacks")).toContainText("ficou com o modelo base");
 
   const { zip, name } = await openZip(page);
   expect(name).toBe("agenda-clinica-kit.zip");
