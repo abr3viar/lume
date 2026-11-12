@@ -36,6 +36,10 @@ describe("estrutura do kit", () => {
     const paths = fs.map((f) => f.path).sort();
     expect(paths).toEqual(
       [
+        // Stack Next.js: proteções e hooks de formatação e typecheck.
+        ".claude/settings.json",
+        ".claude/hooks/formatar.mjs",
+        ".claude/hooks/verificar-tipos.mjs",
         ".claude/agents/arquiteto-produto.md",
         ".claude/agents/revisor-codigo.md",
         ".claude/agents/suporte-cliente.md",

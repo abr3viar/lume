@@ -14,6 +14,7 @@ import {
 import { isSafeZipPath, slugify } from "@/lib/slug";
 import { frontmatter, yamlString } from "./frontmatter";
 import { redactSecrets } from "./secrets";
+import { hooksFor } from "./hooks";
 import { detectStacks } from "./stacks";
 import { buildTree, renderTreeText } from "./tree";
 
@@ -354,6 +355,7 @@ Antes de usar um MCP que escreve dados, explique ao usuário o que vai fazer e p
 - Prefira mudanças pequenas e revisáveis, uma de cada vez, explicando o que mudou.
 - Quando não tiver certeza de um comando, pacote ou API, consulte a documentação oficial em vez de supor.
 - Os agentes, skills e MCPs deste kit são pontos de partida: adapte-os ao projeto conforme ele evolui.
+- O \`.claude/settings.json\` bloqueia a leitura do \`.env\` e comandos destrutivos, e pode formatar ou rodar o typecheck automaticamente. Não tente contornar essas regras; se uma atrapalhar, explique e peça ao usuário para ajustar.
 `);
 
   parts.push(`## O que NÃO fazer
@@ -764,7 +766,22 @@ ${input.mcps.length ? `- **Um MCP não conecta:** digite \`/mcp\` e veja o statu
 - Revise as alterações antes de aceitar, principalmente em arquivos de configuração, pagamento e autenticação.
 - Nunca cole chaves, tokens ou senhas no chat. Elas ficam só no \`.env\`.
 - Conceda só as permissões necessárias: prefira tokens com escopo mínimo e modos somente leitura quando existirem.
-${input.mcps.some((m) => m.riskLevel !== "leitura") ? `- Atenção aos MCPs que escrevem dados ou têm acesso amplo: ${input.mcps.filter((m) => m.riskLevel !== "leitura").map((m) => m.name).join(", ")}. Confirme cada ação antes.\n` : ""}`);
+${input.mcps.some((m) => m.riskLevel !== "leitura") ? `- Atenção aos MCPs que escrevem dados ou têm acesso amplo: ${input.mcps.filter((m) => m.riskLevel !== "leitura").map((m) => m.name).join(", ")}. Confirme cada ação antes.\n` : ""}
+### Proteções e automações (\`.claude/settings.json\`)
+
+O kit traz regras que valem para o Claude Code neste projeto:
+
+- **Bloqueado:** ler ou editar \`.env\`, \`.env.local\` e \`.env.production\`, ler a pasta \`secrets/\`, e os comandos \`rm -rf\`, \`git push --force\`, \`git reset --hard\` e \`git clean -fd\`. O \`.env.example\` continua liberado.
+- **Pede confirmação:** \`git push\`.
+${hooksFor(detectStacks(saas)).automations.map((a) => `- **Automático:** ${a}`).join("\n")}${hooksFor(detectStacks(saas)).automations.length ? `\n- Os scripts ficam em \`.claude/hooks/\`. As automações só começam a rodar depois que você aceitar o aviso de confiança da pasta no Claude Code; os bloqueios valem desde o início.` : ""}
+
+${pick(lv, {
+  iniciante: "Essas regras são uma rede de proteção, não uma garantia: um comando escrito de outro jeito pode escapar. Continue revisando o que o Claude pede para fazer.",
+  intermediario: "As regras de Bash casam por prefixo e não são uma barreira de segurança completa; trate como rede de proteção. Para desligar algo, remova a entrada correspondente do arquivo.",
+  avancado: "Regras de prefixo não são barreira de segurança (ver docs de permissions). Ajuste ou remova as entradas à vontade; `\"disableAllHooks\": true` desliga os hooks.",
+})}
+**Já tem um \`.claude/settings.json\`?** Não sobrescreva: junte as listas \`permissions.deny\`, \`permissions.ask\` e os \`hooks\` do kit com as suas.
+`);
 
   s.push(`## 14. Ponto de partida, não ponto final
 
@@ -789,6 +806,7 @@ export function buildKitFiles(input: KitInput): KitFile[] {
   const core: KitFile[] = [
     ...input.agents.map(agentFile),
     ...input.skills.flatMap(skillFiles),
+    ...hooksFor(detectStacks(input.saas)).files,
     { path: "CLAUDE.md", content: claudeMd(input) },
     { path: "PROMPT-DE-ATIVACAO.md", content: activationPrompt(input) },
   ];
