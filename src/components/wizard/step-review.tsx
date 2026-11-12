@@ -12,6 +12,7 @@ import { saasInfoSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { cartCount, formToInput, useKit, useUi } from "@/store/kit-store";
 import { PackageExplorer } from "./package-explorer";
+import { ModeBadge } from "./mode-badge";
 import { useStepNext } from "./step-actions";
 import { StepFooter, StepHeader } from "./step-header";
 
@@ -51,6 +52,8 @@ export function StepReview() {
           ? "Confira o que vai no pacote e veja cada arquivo antes de gerar. Na geração, a IA adapta cada agente e skill ao seu SaaS."
           : "Confira o que vai no pacote e veja cada arquivo antes de gerar. Depois, o prompt de ativação pede ao Claude Code para adaptar o kit ao seu projeto."}
       </StepHeader>
+
+      <ModeBadge className="-mt-4 mb-10 max-w-3xl" />
 
       <div className="grid gap-10 lg:grid-cols-[22rem_1fr]">
         <div className="grid content-start gap-8">

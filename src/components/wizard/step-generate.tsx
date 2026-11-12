@@ -11,6 +11,7 @@ import { extractPromptBlock, generateKit, type GenerateResult, type GenProgress 
 import { saasInfoSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { formToInput, useKit } from "@/store/kit-store";
+import { ModeBadge } from "./mode-badge";
 import { StepHeader } from "./step-header";
 
 function TaskIcon({ state }: { state: GenProgress["tasks"][number]["state"] }) {
@@ -60,6 +61,7 @@ function Success({ result, onReset }: { result: GenerateResult; onReset: () => v
           <StepHeader title={brand.copy.success} className="mb-8">
             {result.files.length} arquivos prontos para a pasta do seu projeto.
           </StepHeader>
+          <ModeBadge compact className="mb-6 max-w-xl" />
           <div className="flex flex-wrap gap-3">
             <Button asChild size="lg">
               <a href={url} download={result.fileName}>
@@ -161,6 +163,8 @@ export function StepGenerate() {
             ? "Cada item é personalizado separadamente. Se algum não der certo, ele entra com o modelo base."
             : "Montando agentes, skills e arquivos de contexto com o seu SaaS. O Claude Code termina de adaptar tudo ao seu projeto pelo prompt de ativação."}
       </StepHeader>
+
+      {!failed && <ModeBadge className="-mt-4 mb-8 max-w-3xl" />}
 
       {failed ? (
         <div className="flex gap-3">

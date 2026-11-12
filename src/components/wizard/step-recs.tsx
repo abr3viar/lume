@@ -17,6 +17,7 @@ import { cn } from "@/lib/utils";
 import { cartCount, cartSummary, formToInput, recsKeyFor, useKit, useUi } from "@/store/kit-store";
 import { Chip } from "./fields";
 import { CardSkeleton, ItemCard } from "./item-card";
+import { ModeBadge } from "./mode-badge";
 import { useStepNext } from "./step-actions";
 import { StepFooter, StepHeader } from "./step-header";
 
@@ -53,7 +54,7 @@ function useRecommendations() {
           },
           {
             signal: c.signal,
-            onMeta: (source) => useKit.setState({ recsSource: source }),
+            onMeta: (source, provider) => useKit.setState({ recsSource: source, aiProvider: provider }),
             onItem: (item) =>
               setRecs((r) =>
                 r[item.kind].some((x) => x.id === item.id) ? r : { ...r, [item.kind]: [...r[item.kind], item] },
@@ -327,6 +328,8 @@ export function StepRecs() {
             ? "Escolhemos do catálogo o que mais combina com o nicho, o modelo, o estágio, o objetivo e a stack que você contou. Adicione ao kit o que fizer sentido."
             : "A IA escolheu do catálogo o que mais combina com o que você contou. Adicione ao kit o que fizer sentido."}
       </StepHeader>
+
+      <ModeBadge className="-mt-4 mb-10 max-w-3xl" />
 
       <Presets />
 

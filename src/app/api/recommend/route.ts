@@ -1,4 +1,4 @@
-import { aiAvailable, friendlyError } from "@/lib/ai/client";
+import { aiAvailable, aiProvider, friendlyError } from "@/lib/ai/client";
 import { streamRecommendations } from "@/lib/ai/recommend";
 import { jsonError, readJson } from "@/lib/http";
 import { clientIp, LIMITS, rateLimit } from "@/lib/rate-limit";
@@ -26,7 +26,7 @@ export async function POST(req: Request) {
     async start(controller) {
       const send = (data: unknown) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
       const sendLocal = () => {
-        send({ type: "meta", source: "local" });
+        send({ type: "meta", source: "local", provider: "local" });
         const items = localRecommendations(body.data);
         for (const item of items) send({ type: "item", item });
         send({ type: "done", count: items.length });
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       try {
         // Sem chave de API, o recomendador local do Lume responde (de graça, determinístico).
         if (!aiAvailable()) return sendLocal();
-        send({ type: "meta", source: "ia" });
+        send({ type: "meta", source: "ia", provider: aiProvider() });
         let count = 0;
         try {
           for await (const item of streamRecommendations(body.data, req.signal)) {

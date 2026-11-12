@@ -21,6 +21,21 @@ export const brand = {
     success: "Tudo aceso! Seu kit está pronto.",
     genericError: "Faltou luz por aqui. Tente de novo em instantes.",
   },
+  /** Como cada modo de IA aparece na interface. */
+  aiModes: {
+    "claude-code": {
+      label: "IA pela sua conta do Claude",
+      detail: "O Claude Code do seu computador escolhe e personaliza cada item. Sem chave de API.",
+    },
+    api: {
+      label: "IA pela API da Anthropic",
+      detail: "A IA escolhe e personaliza cada item para o seu SaaS.",
+    },
+    local: {
+      label: "Sem IA: grátis, sem conta",
+      detail: "O recomendador do Lume escolhe pelo que você contou. A adaptação fina acontece no Claude Code, pelo prompt de ativação.",
+    },
+  },
 } as const;
 
 export type Brand = typeof brand;

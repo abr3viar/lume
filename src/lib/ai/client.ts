@@ -19,6 +19,13 @@ export function aiAvailable() {
   return claudeCodeEnabled() || hasApiKey();
 }
 
+/** Qual IA vai responder: Claude Code local tem prioridade sobre a API. */
+export function aiProvider(): "claude-code" | "api" | "local" {
+  if (claudeCodeEnabled()) return "claude-code";
+  if (hasApiKey()) return "api";
+  return "local";
+}
+
 let client: Anthropic | null = null;
 export function getClient(): Anthropic {
   if (!hasApiKey()) throw new MissingKeyError();

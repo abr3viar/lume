@@ -19,7 +19,7 @@ export async function mockRecommend(route: Route) {
     excludeIds: Record<Kind, string[]>;
   };
   const count = body.more ? { agent: 4, skill: 3, mcp: 2 } : { agent: 9, skill: 6, mcp: 5 };
-  const lines: string[] = [];
+  const lines: string[] = [`data: ${JSON.stringify({ type: "meta", source: "ia", provider: "api" })}\n\n`];
   for (const kind of body.kinds) {
     const ids = POOL[kind].filter((id) => !body.excludeIds[kind].includes(id)).slice(0, count[kind]);
     for (const [i, id] of ids.entries()) {

@@ -71,6 +71,8 @@ type KitState = {
   recsKey: string | null;
   /** De onde vieram as sugestões: IA (com chave) ou recomendador local (sem chave). */
   recsSource: "ia" | "local" | null;
+  /** Quem gerou as sugestões: Claude Code local, API ou o recomendador do Lume. */
+  aiProvider: "claude-code" | "api" | "local" | null;
   cart: Cart;
   setStep: (s: Step) => void;
   setMode: (m: Mode) => void;
@@ -94,6 +96,7 @@ export const useKit = create<KitState>()(
       recs: emptyRecs,
       recsKey: null,
       recsSource: null,
+      aiProvider: null,
       cart: emptyCart,
       setStep: (s) => set((st) => ({ step: s, maxStep: (Math.max(st.maxStep, s) as Step) })),
       setMode: (m) => set({ mode: m }),
@@ -127,7 +130,7 @@ export const useKit = create<KitState>()(
       remove: (kind, id) => set((st) => ({ cart: { ...st.cart, [kind]: st.cart[kind].filter((x) => x !== id) } })),
       clearCart: () => set({ cart: emptyCart }),
       reset: () =>
-        set({ step: 1, maxStep: 1, mode: null, form: emptyForm, recs: emptyRecs, recsKey: null, recsSource: null, cart: emptyCart }),
+        set({ step: 1, maxStep: 1, mode: null, form: emptyForm, recs: emptyRecs, recsKey: null, recsSource: null, aiProvider: null, cart: emptyCart }),
     }),
     {
       name: "lume-kit-v1",
@@ -147,6 +150,7 @@ export const useKit = create<KitState>()(
         recs: s.recs,
         recsKey: s.recsKey,
         recsSource: s.recsSource,
+        aiProvider: s.aiProvider,
         cart: s.cart,
       }),
     },

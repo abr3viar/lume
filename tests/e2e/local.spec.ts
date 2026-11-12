@@ -29,6 +29,7 @@ for (const mode of ["existente", "zero"] as const) {
     await page.getByRole("button", { name: "Ver recomendações" }).click();
 
     await expect(page.getByText("Escolhemos do catálogo o que mais combina")).toBeVisible();
+    await expect(page.getByTestId("modo-ativo")).toContainText("Sem IA: grátis, sem conta");
     const cards = page.getByRole("tabpanel").getByRole("article");
     await expect(cards).toHaveCount(7);
     await expect(cards.first()).toContainText(`Faz sentido para o ${name}`);

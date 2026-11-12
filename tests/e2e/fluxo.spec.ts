@@ -45,6 +45,7 @@ test("modo projeto existente: do formulário ao zip", async ({ page }) => {
 
   // Recomendações em streaming nas três abas.
   await expect(page.getByRole("heading", { name: "Sugestões para o Agenda Clínica" })).toBeVisible();
+  await expect(page.getByTestId("modo-ativo")).toContainText("IA pela API da Anthropic");
   const agentCards = page.getByRole("tabpanel").getByRole("article");
   await expect(agentCards).toHaveCount(9);
   await page.getByRole("button", { name: "Adicionar Suporte ao cliente ao kit" }).click();
