@@ -5,8 +5,11 @@ import type { RecommendedItem } from "@/lib/ai/recommend-core";
 import type { Mode, SaasInfoInput } from "@/lib/schemas";
 import { brand } from "@/config/brand";
 
+export type RecsSource = "ia" | "local";
+
 type Events = {
   onItem: (item: RecommendedItem) => void;
+  onMeta?: (source: RecsSource) => void;
   signal?: AbortSignal;
 };
 
@@ -28,7 +31,7 @@ export async function fetchRecommendations(
     more: boolean;
     excludeIds: Record<ItemKind, string[]>;
   },
-  { onItem, signal }: Events,
+  { onItem, onMeta, signal }: Events,
 ): Promise<number> {
   let res: Response;
   try {
@@ -60,10 +63,13 @@ export async function fetchRecommendations(
       const line = ev.split("\n").find((l) => l.startsWith("data: "));
       if (!line) continue;
       const msg = JSON.parse(line.slice(6)) as
+        | { type: "meta"; source: RecsSource }
         | { type: "item"; item: RecommendedItem }
         | { type: "done"; count: number }
         | { type: "error"; message: string; status: number };
-      if (msg.type === "item") {
+      if (msg.type === "meta") {
+        onMeta?.(msg.source);
+      } else if (msg.type === "item") {
         count++;
         onItem(msg.item);
       } else if (msg.type === "error") {

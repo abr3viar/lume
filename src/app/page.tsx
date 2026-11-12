@@ -15,11 +15,11 @@ const STEPS = [
   },
   {
     title: "Escolha o que entra no kit",
-    text: "A IA sugere agentes, skills e MCPs do catálogo e explica por que cada um serve para o seu SaaS. Você monta o carrinho.",
+    text: "O Lume sugere agentes, skills e MCPs do catálogo e explica por que cada um serve para o seu SaaS. Você monta o carrinho.",
   },
   {
     title: "Baixe e solte na pasta",
-    text: "O zip vem personalizado, com LEIA-ME no seu nível técnico e um prompt de ativação para colar no Claude Code.",
+    text: "O zip vem com o contexto do seu SaaS, LEIA-ME no seu nível técnico e um prompt de ativação que faz o Claude Code adaptar tudo ao projeto.",
   },
 ];
 
@@ -110,8 +110,8 @@ export default function Home() {
                 <ListChecks className="size-6 text-ink" aria-hidden />
                 <h3 className="mt-4 font-semibold">Catálogo curado</h3>
                 <p className="mt-2 text-pretty text-ink-2">
-                  {catalogStats.agents} agentes, {catalogStats.skills} skills e {catalogStats.mcps} MCPs. A IA escolhe
-                  entre eles; não inventa itens nem comandos.
+                  {catalogStats.agents} agentes, {catalogStats.skills} skills e {catalogStats.mcps} MCPs. As sugestões
+                  saem sempre desse catálogo; nada de itens ou comandos inventados.
                 </p>
               </li>
               <li>

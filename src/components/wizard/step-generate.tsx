@@ -108,6 +108,7 @@ export function StepGenerate() {
   const cart = useKit((s) => s.cart);
   const setStep = useKit((s) => s.setStep);
   const reset = useKit((s) => s.reset);
+  const ai = useKit((s) => s.recsSource) !== "local";
   const [progress, setProgress] = useState<GenProgress | null>(null);
   const [result, setResult] = useState<GenerateResult | null>(null);
   const [failed, setFailed] = useState(false);
@@ -123,7 +124,7 @@ export function StepGenerate() {
     const c = new AbortController();
     ctrl.current = c;
     generateKit(
-      { mode, saas: parsed.data, ids: { agents: cart.agent, skills: cart.skill, mcps: cart.mcp } },
+      { mode, saas: parsed.data, ids: { agents: cart.agent, skills: cart.skill, mcps: cart.mcp }, ai },
       (p) => !c.signal.aborted && setProgress(p),
       c.signal,
     )
@@ -156,7 +157,9 @@ export function StepGenerate() {
       <StepHeader title={failed ? "Faltou luz por aqui" : "Acendendo o seu kit"}>
         {failed
           ? "Não conseguimos montar o zip. Seus itens continuam no carrinho."
-          : "Cada item é personalizado separadamente. Se algum não der certo, ele entra com o modelo base."}
+          : ai
+            ? "Cada item é personalizado separadamente. Se algum não der certo, ele entra com o modelo base."
+            : "Montando agentes, skills e arquivos de contexto com o seu SaaS. O Claude Code termina de adaptar tudo ao seu projeto pelo prompt de ativação."}
       </StepHeader>
 
       {failed ? (

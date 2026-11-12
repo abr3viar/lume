@@ -52,6 +52,7 @@ function useRecommendations() {
           },
           {
             signal: c.signal,
+            onMeta: (source) => useKit.setState({ recsSource: source }),
             onItem: (item) =>
               setRecs((r) =>
                 r[item.kind].some((x) => x.id === item.id) ? r : { ...r, [item.kind]: [...r[item.kind], item] },
@@ -254,6 +255,7 @@ export function StepRecs() {
   const tab = useUi((s) => s.activeTab);
   const set = useUi((s) => s.set);
   const status = useUi((s) => s.recStatus);
+  const source = useKit((s) => s.recsSource);
   const total = cartCount(cart);
 
   const next = () => {
@@ -279,7 +281,9 @@ export function StepRecs() {
   return (
     <div className="wrap py-12 lg:py-16">
       <StepHeader title={`Sugestões para o ${name.trim() || "seu SaaS"}`}>
-        A IA escolheu do catálogo o que mais combina com o que você contou. Adicione ao kit o que fizer sentido.
+        {source === "local"
+          ? "Escolhemos do catálogo o que mais combina com o nicho, o modelo, o estágio, o objetivo e a stack que você contou. Adicione ao kit o que fizer sentido."
+          : "A IA escolheu do catálogo o que mais combina com o que você contou. Adicione ao kit o que fizer sentido."}
       </StepHeader>
 
       <Presets />

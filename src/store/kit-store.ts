@@ -63,6 +63,8 @@ type KitState = {
   form: SaasForm;
   recs: Recs;
   recsKey: string | null;
+  /** De onde vieram as sugestões: IA (com chave) ou recomendador local (sem chave). */
+  recsSource: "ia" | "local" | null;
   cart: Cart;
   setStep: (s: Step) => void;
   setMode: (m: Mode) => void;
@@ -85,6 +87,7 @@ export const useKit = create<KitState>()(
       form: emptyForm,
       recs: emptyRecs,
       recsKey: null,
+      recsSource: null,
       cart: emptyCart,
       setStep: (s) => set((st) => ({ step: s, maxStep: (Math.max(st.maxStep, s) as Step) })),
       setMode: (m) => set({ mode: m }),
@@ -117,7 +120,8 @@ export const useKit = create<KitState>()(
       },
       remove: (kind, id) => set((st) => ({ cart: { ...st.cart, [kind]: st.cart[kind].filter((x) => x !== id) } })),
       clearCart: () => set({ cart: emptyCart }),
-      reset: () => set({ step: 1, maxStep: 1, mode: null, form: emptyForm, recs: emptyRecs, recsKey: null, cart: emptyCart }),
+      reset: () =>
+        set({ step: 1, maxStep: 1, mode: null, form: emptyForm, recs: emptyRecs, recsKey: null, recsSource: null, cart: emptyCart }),
     }),
     {
       name: "lume-kit-v1",
@@ -131,6 +135,7 @@ export const useKit = create<KitState>()(
         form: s.form,
         recs: s.recs,
         recsKey: s.recsKey,
+        recsSource: s.recsSource,
         cart: s.cart,
       }),
     },

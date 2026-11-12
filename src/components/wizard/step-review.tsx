@@ -24,6 +24,7 @@ export function StepReview() {
   const remove = useKit((s) => s.remove);
   const setStep = useKit((s) => s.setStep);
   const setUi = useUi((s) => s.set);
+  const ai = useKit((s) => s.recsSource) !== "local";
   const total = cartCount(cart);
 
   const saas = useMemo(() => saasInfoSchema.safeParse(formToInput(form)), [form]);
@@ -46,8 +47,9 @@ export function StepReview() {
   return (
     <div className="wrap py-12 lg:py-16">
       <StepHeader title="Revise o seu kit">
-        Confira o que vai no pacote e veja cada arquivo antes de gerar. Na geração, a IA adapta cada agente e skill ao
-        seu SaaS.
+        {ai
+          ? "Confira o que vai no pacote e veja cada arquivo antes de gerar. Na geração, a IA adapta cada agente e skill ao seu SaaS."
+          : "Confira o que vai no pacote e veja cada arquivo antes de gerar. Depois, o prompt de ativação pede ao Claude Code para adaptar o kit ao seu projeto."}
       </StepHeader>
 
       <div className="grid gap-10 lg:grid-cols-[22rem_1fr]">
@@ -129,7 +131,7 @@ export function StepReview() {
             <h2 id="explorer-title" className="font-semibold">
               Explorador do pacote
             </h2>
-            <p className="text-xs text-ink-3">Prévia com os modelos base</p>
+            <p className="text-xs text-ink-3">{ai ? "Prévia com os modelos base" : "É exatamente o que vai no zip"}</p>
           </div>
           {preview ? (
             <PackageExplorer files={preview.files} root={preview.root} />

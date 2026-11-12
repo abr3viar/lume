@@ -25,8 +25,8 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     a: "Nunca. O .mcp.json usa variáveis como ${GITHUB_PERSONAL_ACCESS_TOKEN}, o .env.example vem sem valores e a maioria dos MCPs usa login pelo navegador. O LEIA-ME explica como preencher tudo localmente.",
   },
   {
-    q: "A IA inventa agentes ou comandos?",
-    a: "Não. A IA escolhe itens de um catálogo curado e escreve por que cada um faz sentido para você. Na geração, ela adapta os textos ao seu SaaS mantendo a estrutura. Se uma adaptação falhar, o item vai com o modelo base e o LEIA-ME avisa.",
+    q: "As sugestões são inventadas na hora?",
+    a: "Não. O Lume escolhe itens de um catálogo curado, cruzando o nicho, o modelo de negócio, o estágio, o objetivo e a stack que você informou, e mostra por que cada um faz sentido. Depois, o prompt de ativação pede ao Claude Code para ler o seu projeto e ajustar agentes e skills à realidade dele.",
   },
   {
     q: "Posso usar em produção direto?",

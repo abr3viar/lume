@@ -2,6 +2,7 @@ import { friendlyError, hasApiKey } from "@/lib/ai/client";
 import { streamRecommendations } from "@/lib/ai/recommend";
 import { jsonError, readJson } from "@/lib/http";
 import { clientIp, LIMITS, rateLimit } from "@/lib/rate-limit";
+import { localRecommendations } from "@/lib/recommend-local";
 import { recommendRequestSchema } from "@/lib/schemas";
 
 export const maxDuration = 120;
@@ -19,24 +20,35 @@ export async function POST(req: Request) {
 
   const body = await readJson(req, recommendRequestSchema);
   if (!body.ok) return body.response;
-  if (!hasApiKey()) return jsonError(503, "A IA ainda não está configurada neste ambiente. Tente de novo mais tarde.");
 
   const encoder = new TextEncoder();
   const stream = new ReadableStream<Uint8Array>({
     async start(controller) {
       const send = (data: unknown) => controller.enqueue(encoder.encode(`data: ${JSON.stringify(data)}\n\n`));
-      let count = 0;
+      const sendLocal = () => {
+        send({ type: "meta", source: "local" });
+        const items = localRecommendations(body.data);
+        for (const item of items) send({ type: "item", item });
+        send({ type: "done", count: items.length });
+      };
       try {
-        for await (const item of streamRecommendations(body.data, req.signal)) {
-          count++;
-          send({ type: "item", item });
+        // Sem chave de API, o recomendador local do Lume responde (de graça, determinístico).
+        if (!hasApiKey()) return sendLocal();
+        send({ type: "meta", source: "ia" });
+        let count = 0;
+        try {
+          for await (const item of streamRecommendations(body.data, req.signal)) {
+            count++;
+            send({ type: "item", item });
+          }
+          send({ type: "done", count });
+        } catch (err) {
+          const { message, status } = friendlyError(err);
+          // Nunca registramos dados do usuário nem a chave: só o tipo do erro.
+          console.error("[recommend] falha", status, err instanceof Error ? err.name : "erro");
+          if (count === 0 && !req.signal.aborted) sendLocal();
+          else send({ type: "error", message, status });
         }
-        send({ type: "done", count });
-      } catch (err) {
-        const { message, status } = friendlyError(err);
-        // Nunca registramos dados do usuário nem a chave: só o tipo do erro.
-        console.error("[recommend] falha", status, err instanceof Error ? err.name : "erro");
-        send({ type: "error", message, status });
       } finally {
         controller.close();
       }
