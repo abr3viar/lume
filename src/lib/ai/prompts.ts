@@ -51,18 +51,26 @@ Critérios de escolha:
 - Para MCPs, prefira os essenciais e de menor risco; cada MCP consome contexto. Considere a stack informada (ex.: só recomende Supabase, Stripe ou Vercel se fizer sentido).
 - Evite itens marcados para outro modelo de negócio, a não ser que haja motivo claro.
 - Ordene do mais relevante para o menos relevante.
+- Kit enxuto é melhor que kit grande: cada item ocupa contexto do Claude e dificulta a escolha do especialista certo. Na dúvida, deixe de fora.
+- "impact": "alto" significa ESSENCIAL (o kit fica fraco sem ele); "médio" significa OPCIONAL (ajuda, mas pode ficar para depois). Respeite o limite de essenciais do pedido.
+
+Como escrever o campo reason:
+- 1 a 2 frases, até 220 caracteres, falando com a pessoa por "você", sem prometer resultados.
+- Cite pelo menos um detalhe concreto que a pessoa informou (nicho, problema, stack, estágio, objetivo ou a tarefa) e diga em que situação o item será usado.
+- Proibido justificativa genérica que serviria para qualquer SaaS, como "ajuda a melhorar a qualidade" ou "é importante para todo projeto".
+- Exemplo ruim: "Ajuda a manter o código organizado."
+- Exemplo bom: "Com Next.js e Supabase, revisa cada mudança nas rotas de agendamento antes do deploy, onde um erro derruba a confirmação por WhatsApp."
 
 Formato de saída OBRIGATÓRIO: uma linha de JSON por item (NDJSON), sem texto antes ou depois, sem cercas de código, sem vírgulas entre linhas. Cada linha:
-{"kind":"agent|skill|mcp","id":"<id do catálogo>","reason":"<1 a 2 frases, até 220 caracteres, citando algo concreto do SaaS>","impact":"alto|médio"}
-
-O campo reason fala diretamente com a pessoa, tratando por "você", sem prometer resultados.`;
+{"kind":"agent|skill|mcp","id":"<id do catálogo>","reason":"<texto>","impact":"alto|médio"}`;
 
 export function recommendUserPrompt(params: {
   saasBlock: string;
   catalog: { agents?: string; skills?: string; mcps?: string };
   counts: { agent?: [number, number]; skill?: [number, number]; mcp?: [number, number] };
+  essential?: { agent: number; skill: number; mcp: number };
 }) {
-  const { catalog, counts } = params;
+  const { catalog, counts, essential } = params;
   const sections: string[] = [];
   if (catalog.agents) sections.push(`## Agentes (kind "agent")\nid | nome | categoria | público | estágios | descrição\n${catalog.agents}`);
   if (catalog.skills) sections.push(`## Skills (kind "skill")\nid | nome | categoria | público | estágios | descrição\n${catalog.skills}`);
@@ -77,7 +85,11 @@ export function recommendUserPrompt(params: {
 ${sections.join("\n\n")}
 
 # Pedido
-Escolha ${want.join(", ")}. Emita primeiro os agentes, depois as skills, depois os MCPs, cada grupo em ordem de relevância. Uma linha JSON por item.`;
+Escolha ${want.join(", ")}. ${
+    essential && essential.agent + essential.skill + essential.mcp > 0
+      ? `Marque como "alto" (essencial) no máximo ${essential.agent} agentes, ${essential.skill} skills e ${essential.mcp} MCPs; o resto é "médio" (opcional).`
+      : `Todos estes são complementares: use "impact": "médio".`
+  } Emita primeiro os agentes, depois as skills, depois os MCPs, cada grupo em ordem de relevância. Uma linha JSON por item.`;
 }
 
 export const PERSONALIZE_SYSTEM = `Você adapta templates de agentes e skills do Claude Code ao contexto de um SaaS específico, em português do Brasil.

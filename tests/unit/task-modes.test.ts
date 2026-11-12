@@ -40,7 +40,7 @@ describe("validação dos modos de tarefa", () => {
 describe("recomendações enxutas", () => {
   it("contagens menores para a IA", () => {
     expect(countsFor({ kinds: ["agent", "skill", "mcp"], more: false, mode: "erro" })).toEqual({ agent: [3, 5], skill: [3, 5], mcp: [2, 3] });
-    expect(countsFor({ kinds: ["agent"], more: false, mode: "zero" })).toEqual({ agent: [8, 12] });
+    expect(countsFor({ kinds: ["agent"], more: false, mode: "zero" })).toEqual({ agent: [5, 8] });
   });
 
   it("modo erro: triagem de bugs e testes na frente, sem agentes de fundação", () => {

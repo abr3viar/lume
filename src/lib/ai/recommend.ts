@@ -7,7 +7,7 @@ import { ClaudeCodeError, claudeCodeEnabled, claudeCodeModels, streamClaudeCode 
 import { getClient, models, supportsBetweenTools, supportsServerFallback } from "./client";
 import { LineBuffer } from "./parse";
 import { RECOMMEND_SYSTEM, recommendUserPrompt, saasInfoBlock } from "./prompts";
-import { countsFor, lineSchema, RecommendationFilter, type RecommendedItem } from "./recommend-core";
+import { countsFor, essentialMax, lineSchema, RecommendationFilter, type RecommendedItem } from "./recommend-core";
 
 function catalogFor(req: RecommendRequest, extraExclude: Partial<Record<ItemKind, string[]>> = {}) {
   const full = catalogSummaryForAI();
@@ -35,7 +35,7 @@ async function* streamRecommendationsClaudeCode(req: RecommendRequest, signal?: 
   const saasBlock = saasInfoBlock(req.saas, req.mode);
   const run = async function* (kinds: ItemKind[], counts: ReturnType<typeof countsFor>, extra: Partial<Record<ItemKind, string[]>>) {
     const lines = new LineBuffer();
-    const prompt = recommendUserPrompt({ saasBlock, catalog: catalogFor({ ...req, kinds }, extra), counts });
+    const prompt = recommendUserPrompt({ saasBlock, catalog: catalogFor({ ...req, kinds }, extra), counts, essential: essentialMax(req) });
     for await (const chunk of streamClaudeCode({ system: RECOMMEND_SYSTEM, prompt, model: main, signal })) {
       for (const line of lines.push(chunk)) {
         const item = filter.acceptLine(line);
@@ -93,7 +93,7 @@ async function* streamRecommendationsApi(req: RecommendRequest, signal?: AbortSi
     messages: [
       {
         role: "user" as const,
-        content: recommendUserPrompt({ saasBlock, catalog: catalogFor(req), counts: countsFor(req) }),
+        content: recommendUserPrompt({ saasBlock, catalog: catalogFor(req), counts: countsFor(req), essential: essentialMax(req) }),
       },
     ],
   };
@@ -145,7 +145,7 @@ async function* streamRecommendationsApi(req: RecommendRequest, signal?: AbortSi
         messages: [
           {
             role: "user",
-            content: recommendUserPrompt({ saasBlock, catalog: catalogFor(retryReq, extraExclude), counts }),
+            content: recommendUserPrompt({ saasBlock, catalog: catalogFor(retryReq, extraExclude), counts, essential: essentialMax(req) }),
           },
         ],
       },

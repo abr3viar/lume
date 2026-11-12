@@ -14,7 +14,7 @@ import { itemMeta, KIND_LABEL } from "@/lib/item-meta";
 import { adaptPreset } from "@/lib/presets-adapt";
 import { isTaskMode } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
-import { cartCount, formToInput, recsKeyFor, useKit, useUi } from "@/store/kit-store";
+import { cartCount, cartSummary, formToInput, recsKeyFor, useKit, useUi } from "@/store/kit-store";
 import { Chip } from "./fields";
 import { CardSkeleton, ItemCard } from "./item-card";
 import { useStepNext } from "./step-actions";
@@ -148,6 +148,41 @@ function Presets() {
         })}
       </div>
     </section>
+  );
+}
+
+/** Atalho para começar enxuto: adiciona só o que foi marcado como essencial. */
+function EssentialsBar() {
+  const recs = useKit((s) => s.recs);
+  const cart = useKit((s) => s.cart);
+  const addMany = useKit((s) => s.addMany);
+  const essentials = {
+    agent: recs.agent.filter((r) => r.impact === "alto").map((r) => r.id),
+    skill: recs.skill.filter((r) => r.impact === "alto").map((r) => r.id),
+    mcp: recs.mcp.filter((r) => r.impact === "alto").map((r) => r.id),
+  };
+  const total = essentials.agent.length + essentials.skill.length + essentials.mcp.length;
+  const missing = KINDS.reduce((n, k) => n + essentials[k].filter((id) => !cart[k].includes(id)).length, 0);
+  if (total === 0) return null;
+  return (
+    <div className="mb-6 flex flex-col gap-3 rounded-3xl border border-line bg-surface p-5 sm:flex-row sm:items-center sm:justify-between">
+      <p className="text-pretty text-sm text-ink-2">
+        <span className="font-medium text-ink">Comece enxuto.</span> {cartSummary(essentials)} foram marcados como
+        essenciais para o seu caso; o resto é opcional.
+      </p>
+      <Button
+        variant={missing ? "primary" : "outline"}
+        size="sm"
+        disabled={missing === 0}
+        onClick={() => {
+          const n = addMany(essentials);
+          if (n) useUi.setState((s) => ({ cartPulse: s.cartPulse + 1 }));
+          toast.success(`${n} ${n === 1 ? "item essencial adicionado" : "itens essenciais adicionados"} ao kit`);
+        }}
+      >
+        {missing ? "Adicionar essenciais" : "Essenciais no kit"}
+      </Button>
+    </div>
   );
 }
 
@@ -295,6 +330,8 @@ export function StepRecs() {
 
       <Presets />
 
+      <EssentialsBar />
+
       <Tabs.Root value={tab} onValueChange={(v) => set({ activeTab: v as ItemKind })}>
         <Tabs.List aria-label="Tipos de item" className="mb-8 flex gap-1 border-b border-line">
           {KINDS.map((k, i) => (
@@ -324,7 +361,7 @@ export function StepRecs() {
         </Button>
         <div className="flex items-center gap-3">
           <span className="hidden text-sm text-ink-2 sm:block">
-            {total === 0 ? "Nenhum item no kit" : `${total} ${total === 1 ? "item" : "itens"} no kit`}
+            {total === 0 ? "Nenhum item no kit" : cartSummary(cart)}
           </span>
           <Button size="lg" onClick={next} disabled={total === 0}>
             Revisar o kit

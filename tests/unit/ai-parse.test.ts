@@ -54,8 +54,8 @@ describe("RecommendationFilter", () => {
     const f = new RecommendationFilter(req);
     const all = [...agentById.keys()].filter((id) => id !== "revisor-codigo");
     all.slice(0, 20).forEach((id) => f.acceptLine(line("agent", id)));
-    expect(f.acceptedIds("agent")).toHaveLength(12);
-    expect(f.missing()).toEqual({ mcp: 5 });
+    expect(f.acceptedIds("agent")).toHaveLength(8);
+    expect(f.missing()).toEqual({ mcp: 3 });
   });
 });
 

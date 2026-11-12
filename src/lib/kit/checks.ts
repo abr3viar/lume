@@ -1,11 +1,12 @@
 import { agentById, mcpById, skillById, type Audience } from "@/data/catalog";
+import { KIT_LIMITS } from "@/config/kit";
 import type { BusinessModel } from "@/lib/schemas";
 
 export type CartIds = { agents: string[]; skills: string[]; mcps: string[] };
 export type CheckLevel = "info" | "atencao";
 export type CartCheck = { id: string; level: CheckLevel; title: string; detail: string };
 
-export const MCP_SOFT_LIMIT = 5;
+export const MCP_SOFT_LIMIT = KIT_LIMITS.cartWarn.mcp;
 
 function audienceMismatch(applies: Audience, model: BusinessModel) {
   if (applies === "ambos" || model === "B2B2C") return false;
@@ -49,6 +50,22 @@ export function checkCart(cart: CartIds, model: BusinessModel | undefined): Cart
       level: "atencao",
       title: `${mcps.length} MCPs é bastante`,
       detail: `Cada MCP adiciona ferramentas e instruções ao contexto do Claude. Recomendamos até ${MCP_SOFT_LIMIT} essenciais; você pode ativar outros depois.`,
+    });
+  }
+  if (agents.length > KIT_LIMITS.cartWarn.agent) {
+    out.push({
+      id: "muitos-agentes",
+      level: "atencao",
+      title: `${agents.length} agentes é bastante`,
+      detail: `Com muitos agentes, o Claude escolhe pior qual chamar e o contexto enche. Recomendamos até ${KIT_LIMITS.cartWarn.agent}; fique com os essenciais e adicione outros quando precisar.`,
+    });
+  }
+  if (skills.length > KIT_LIMITS.cartWarn.skill) {
+    out.push({
+      id: "muitas-skills",
+      level: "atencao",
+      title: `${skills.length} skills é bastante`,
+      detail: `Skills demais competem entre si para ser ativadas. Recomendamos até ${KIT_LIMITS.cartWarn.skill}.`,
     });
   }
 

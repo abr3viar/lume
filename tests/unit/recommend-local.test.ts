@@ -9,9 +9,9 @@ const req = (over: Record<string, unknown>) => recommendRequestSchema.parse({ mo
 describe("recomendador local", () => {
   it("devolve itens válidos do catálogo nas quantidades esperadas", () => {
     const out = localRecommendations(req({}));
-    expect(out.filter((i) => i.kind === "agent")).toHaveLength(10);
-    expect(out.filter((i) => i.kind === "skill")).toHaveLength(8);
-    expect(out.filter((i) => i.kind === "mcp")).toHaveLength(5);
+    expect(out.filter((i) => i.kind === "agent")).toHaveLength(7);
+    expect(out.filter((i) => i.kind === "skill")).toHaveLength(5);
+    expect(out.filter((i) => i.kind === "mcp")).toHaveLength(4);
     for (const item of out) expect(recommendationSchema.safeParse(item).success, item.id).toBe(true);
     expect(new Set(out.map((i) => `${i.kind}:${i.id}`)).size).toBe(out.length);
   });
@@ -52,7 +52,7 @@ describe("recomendador local", () => {
     const first = localRecommendations(req({}));
     const excl = { agent: first.filter((i) => i.kind === "agent").map((i) => i.id), skill: [], mcp: [] };
     const more = localRecommendations(req({ kinds: ["agent"], more: true, excludeIds: excl }));
-    expect(more).toHaveLength(5);
+    expect(more).toHaveLength(3);
     for (const i of more) expect(excl.agent).not.toContain(i.id);
   });
 });

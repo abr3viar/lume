@@ -1,5 +1,6 @@
 import { agents, mcps, skills, type Audience, type ItemKind, type Stage } from "@/data/catalog";
-import type { RecommendedItem } from "@/lib/ai/recommend-core";
+import { KIT_LIMITS } from "@/config/kit";
+import { essentialMax, type RecommendedItem } from "@/lib/ai/recommend-core";
 import { isTaskMode, STAGE_LABEL, type RecommendRequest, type SaasInfo } from "@/lib/schemas";
 
 /**
@@ -332,13 +333,9 @@ function writeReason(kind: ItemKind, it: Scored, saas: SaasInfo): string {
 
 /** Recomendações locais no mesmo formato da IA, respeitando tipos, quantidades e exclusões. */
 export function localRecommendations(req: RecommendRequest): RecommendedItem[] {
-  const counts = isTaskMode(req.mode)
-    ? req.more
-      ? { agent: 2, skill: 2, mcp: 2 }
-      : { agent: 4, skill: 4, mcp: 3 }
-    : req.more
-      ? { agent: 5, skill: 4, mcp: 3 }
-      : { agent: 10, skill: 8, mcp: 5 };
+  const limits = isTaskMode(req.mode) ? KIT_LIMITS.task : KIT_LIMITS.full;
+  const counts = req.more ? limits.localMore : limits.local;
+  const essentialCap = essentialMax(req);
   const scored = scoreCatalog(req);
   const out: RecommendedItem[] = [];
   for (const kind of req.kinds) {
@@ -348,14 +345,11 @@ export function localRecommendations(req: RecommendRequest): RecommendedItem[] {
       .sort((a, b) => b.score - a.score || a.order - b.order)
       .slice(0, counts[kind]);
     const top = pool[0]?.score ?? 0;
-    for (const s of pool) {
-      out.push({
-        kind,
-        id: s.id,
-        reason: writeReason(kind, s, req.saas),
-        impact: s.score >= Math.max(6, top * 0.6) ? "alto" : "médio",
-      });
-    }
+    pool.forEach((s, i) => {
+      // Essencial: entre os primeiros (limite por tipo) e com pontuação forte.
+      const essential = i < essentialCap[kind] && s.score >= Math.max(6, top * 0.6);
+      out.push({ kind, id: s.id, reason: writeReason(kind, s, req.saas), impact: essential ? "alto" : "médio" });
+    });
   }
   return out;
 }

@@ -119,7 +119,7 @@ export function ItemCard({ kind, rec, index = 0 }: { kind: ItemKind; rec: Recomm
       )}
 
       <div className="mt-auto flex flex-wrap items-center gap-1.5 pt-5">
-        {rec.impact === "alto" ? <Badge tone="brand">Impacto alto</Badge> : <Badge>Impacto médio</Badge>}
+        {rec.impact === "alto" ? <Badge tone="brand">Essencial</Badge> : <Badge>Opcional</Badge>}
         <Badge>Configuração {meta.effort === "avançado" ? "avançada" : meta.effort === "médio" ? "média" : "fácil"}</Badge>
         {mcp && RiskIcon && (
           <Badge tone={RISK_META[mcp.riskLevel].tone === "calm" ? "neutral" : RISK_META[mcp.riskLevel].tone === "warn" ? "warn" : "strong"}>

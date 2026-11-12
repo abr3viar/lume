@@ -157,6 +157,17 @@ export function cartCount(cart: Cart) {
   return cart.agent.length + cart.skill.length + cart.mcp.length;
 }
 
+/** "7 agentes, 4 skills e 2 MCPs" (omite tipos vazios). */
+export function cartSummary(cart: Cart) {
+  const parts = [
+    cart.agent.length ? `${cart.agent.length} ${cart.agent.length === 1 ? "agente" : "agentes"}` : "",
+    cart.skill.length ? `${cart.skill.length} ${cart.skill.length === 1 ? "skill" : "skills"}` : "",
+    cart.mcp.length ? `${cart.mcp.length} ${cart.mcp.length === 1 ? "MCP" : "MCPs"}` : "",
+  ].filter(Boolean);
+  if (parts.length === 0) return "Nenhum item";
+  return parts.length === 1 ? parts[0] : `${parts.slice(0, -1).join(", ")} e ${parts[parts.length - 1]}`;
+}
+
 /** Estado de interface que não deve persistir. */
 type RecStatus = "idle" | "loading" | "done" | "error";
 type UiState = {

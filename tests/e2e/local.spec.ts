@@ -30,7 +30,7 @@ for (const mode of ["existente", "zero"] as const) {
 
     await expect(page.getByText("Escolhemos do catálogo o que mais combina")).toBeVisible();
     const cards = page.getByRole("tabpanel").getByRole("article");
-    await expect(cards).toHaveCount(10);
+    await expect(cards).toHaveCount(7);
     await expect(cards.first()).toContainText(`Faz sentido para o ${name}`);
 
     // Adiciona os 3 primeiros agentes, 2 skills e 1 MCP.
@@ -45,7 +45,7 @@ for (const mode of ["existente", "zero"] as const) {
     // "Gerar mais" sem repetir.
     await page.getByRole("tab", { name: /Agentes/ }).click();
     await page.getByRole("button", { name: "Gerar mais sugestões" }).click();
-    await expect(cards).toHaveCount(15);
+    await expect(cards).toHaveCount(10);
     const titles = await cards.locator("h3").allTextContents();
     expect(new Set(titles).size).toBe(titles.length);
 
