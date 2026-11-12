@@ -18,6 +18,8 @@ export type SaasForm = {
   stack: string[];
   goal: string;
   techLevel: TechLevel | "";
+  task: string;
+  details: string;
 };
 
 export const emptyForm: SaasForm = {
@@ -30,6 +32,8 @@ export const emptyForm: SaasForm = {
   stack: [],
   goal: "",
   techLevel: "",
+  task: "",
+  details: "",
 };
 
 export type Cart = { agent: string[]; skill: string[]; mcp: string[] };
@@ -43,11 +47,13 @@ export function formToInput(form: SaasForm): SaasInfoInput {
     description: form.description,
     niche: form.niche,
     problem: form.problem,
-    model: (form.model || undefined) as BusinessModel,
+    model: form.model || undefined,
     stage: form.stage || undefined,
     stack: form.stack,
     goal: form.goal,
     techLevel: form.techLevel || undefined,
+    task: form.task,
+    details: form.details,
   };
 }
 
@@ -125,7 +131,12 @@ export const useKit = create<KitState>()(
     }),
     {
       name: "lume-kit-v1",
-      version: 1,
+      version: 2,
+      migrate: (state) => {
+        const s = state as { form?: Partial<SaasForm> };
+        if (s.form) s.form = { ...emptyForm, ...s.form };
+        return s as never;
+      },
       storage: createJSONStorage(() => localStorage),
       skipHydration: true,
       partialize: (s) => ({

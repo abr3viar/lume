@@ -1,4 +1,11 @@
-import { STAGE_LABEL, TECH_LABEL, type Mode, type SaasInfo } from "@/lib/schemas";
+import { isTaskMode, STAGE_LABEL, TECH_LABEL, type Mode, type SaasInfo } from "@/lib/schemas";
+
+const MODE_DESCRIPTION: Record<Mode, string> = {
+  existente: "projeto existente, já tem código; o kit será adaptado a ele",
+  zero: "começando do zero, ainda sem código",
+  erro: "consertar um erro específico num projeto existente (kit enxuto, focado no conserto)",
+  ajuste: "fazer uma atualização curta e pontual num projeto existente (kit enxuto, focado na mudança)",
+};
 
 /** Escapa o conteúdo do usuário para não fechar as tags delimitadoras. */
 function escapeTags(s: string) {
@@ -9,7 +16,7 @@ export function saasInfoBlock(saas: SaasInfo, mode: Mode): string {
   const f = (label: string, v?: string) => `${label}: ${v && v.trim() ? escapeTags(v.trim()) : "(não informado)"}`;
   return [
     "<saas_info>",
-    f("Modo", mode === "zero" ? "começando do zero, ainda sem código" : "projeto existente, já tem código"),
+    f("Modo", MODE_DESCRIPTION[mode]),
     f("Nome", saas.name),
     f("Descrição", saas.description),
     f("Nicho", saas.niche),
@@ -19,6 +26,9 @@ export function saasInfoBlock(saas: SaasInfo, mode: Mode): string {
     f("Stack", saas.stack.join(", ")),
     f("Objetivo do momento", saas.goal),
     f("Nível técnico de quem usa", saas.techLevel ? TECH_LABEL[saas.techLevel] : undefined),
+    ...(isTaskMode(mode)
+      ? [f(mode === "erro" ? "Erro a consertar" : "Mudança pedida", saas.task), f(mode === "erro" ? "Como reproduzir e mensagem de erro" : "Onde fica e restrições", saas.details)]
+      : []),
     "</saas_info>",
   ].join("\n");
 }
@@ -35,6 +45,9 @@ ${DATA_ONLY_RULE}
 Critérios de escolha:
 - Relevância para o problema, o nicho, o modelo (B2B/B2C), o estágio e o objetivo do momento.
 - No modo "começando do zero", priorize os agentes de fundação (arquiteto de produto, definição de MVP, modelagem de dados, design system, planejamento de deploy) e a skill brief-do-projeto.
+- No modo "consertar um erro", o kit é pequeno e focado: priorize triagem de bugs, geração de testes, revisão de código, as skills plano-testes e revisao-pr, e MCPs que ajudam a investigar (Sentry, Playwright, GitHub) conforme a stack. Só inclua agentes de negócio se o erro for desse assunto.
+- No modo "atualização rápida", o kit é pequeno e focado na mudança pedida: revisão de código, padrão de commits e changelog, testes, e o especialista do assunto da mudança (ex.: copy para textos, design system para telas, LGPD para dados pessoais). Nada de agentes de fundação.
+- Nos modos de erro e atualização, a reason deve citar a tarefa descrita.
 - Para MCPs, prefira os essenciais e de menor risco; cada MCP consome contexto. Considere a stack informada (ex.: só recomende Supabase, Stripe ou Vercel se fizer sentido).
 - Evite itens marcados para outro modelo de negócio, a não ser que haja motivo claro.
 - Ordene do mais relevante para o menos relevante.

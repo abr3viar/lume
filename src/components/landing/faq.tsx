@@ -17,6 +17,10 @@ const FAQ: { q: string; a: React.ReactNode }[] = [
     a: "Escolha “Vou começar do zero”. O kit vem com o Modo Descoberta: o Claude entrevista você sobre o SaaS em blocos curtos de perguntas, monta um briefing, pede sua aprovação e só então começa a construir.",
   },
   {
+    q: "Serve para consertar um erro ou fazer uma mudança pequena?",
+    a: "Sim. Escolha “Consertar um erro” ou “Fazer uma atualização rápida” e descreva a tarefa. O kit vem enxuto, com um TAREFA.md e regras para o Claude reproduzir antes de mexer, manter o escopo fechado, pedir aprovação e deixar um teste quando fizer sentido.",
+  },
+  {
     q: "Os MCPs são confiáveis?",
     a: "Só entram no catálogo servidores conferidos na documentação oficial de cada um, com a fonte e a data da verificação. Cada MCP mostra um selo de risco (somente leitura, escreve dados ou acesso amplo) e quais credenciais pede.",
   },

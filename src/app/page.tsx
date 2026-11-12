@@ -77,14 +77,14 @@ export default function Home() {
         <section className="wrap grid gap-12 py-20 lg:grid-cols-2 lg:gap-20 lg:py-28">
           <div>
             <h2 className="font-display text-4xl font-semibold leading-[1.05] tracking-[-0.03em] sm:text-5xl">
-              Com projeto ou do zero
+              Para construir, adaptar, consertar ou ajustar
             </h2>
             <p className="mt-5 max-w-md text-pretty text-lg leading-relaxed text-ink-2">
-              O kit muda conforme o seu ponto de partida. Nos dois casos, o Claude pede sua aprovação antes de mexer em
-              qualquer coisa.
+              O kit muda conforme o que você precisa agora. Em todos os casos, o Claude pede sua aprovação antes de mexer
+              em qualquer coisa.
             </p>
           </div>
-          <div className="grid gap-4">
+          <div className="grid gap-4 sm:grid-cols-2">
             <article className="rounded-3xl border border-line p-7">
               <h3 className="font-display text-2xl font-semibold tracking-tight">Já tenho um projeto</h3>
               <p className="mt-3 text-pretty leading-relaxed text-ink-2">
@@ -97,6 +97,20 @@ export default function Home() {
               <p className="mt-3 text-pretty leading-relaxed opacity-80">
                 O kit liga o Modo Descoberta: antes de escrever uma linha, o Claude entrevista você sobre cliente, MVP,
                 preço, stack e prazo, em blocos curtos, e só constrói depois do brief aprovado.
+              </p>
+            </article>
+            <article className="rounded-3xl border border-line p-7">
+              <h3 className="font-display text-2xl font-semibold tracking-tight">Consertar um erro</h3>
+              <p className="mt-3 text-pretty leading-relaxed text-ink-2">
+                Modo Conserto: o Claude reproduz o erro, mostra a causa com arquivo e linha, propõe a correção mínima e
+                deixa um teste para ele não voltar.
+              </p>
+            </article>
+            <article className="rounded-3xl border border-line p-7">
+              <h3 className="font-display text-2xl font-semibold tracking-tight">Atualização rápida</h3>
+              <p className="mt-3 text-pretty leading-relaxed text-ink-2">
+                Modo Ajuste Rápido: uma mudança curta e bem definida, com plano aprovado antes, escopo fechado e resumo
+                do que mudou.
               </p>
             </article>
           </div>

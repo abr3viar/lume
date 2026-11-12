@@ -1,6 +1,6 @@
 import { agents, mcps, skills, type Audience, type ItemKind, type Stage } from "@/data/catalog";
 import type { RecommendedItem } from "@/lib/ai/recommend-core";
-import { STAGE_LABEL, type RecommendRequest, type SaasInfo } from "@/lib/schemas";
+import { isTaskMode, STAGE_LABEL, type RecommendRequest, type SaasInfo } from "@/lib/schemas";
 
 /**
  * Recomendador local do Lume: funciona sem chave de API.
@@ -184,14 +184,72 @@ function norm(s: string) {
 }
 
 function fits(applies: Audience, model: SaasInfo["model"]) {
-  return applies === "ambos" || model === "B2B2C" || applies === model;
+  return !model || applies === "ambos" || model === "B2B2C" || applies === model;
 }
 
 type Scored = { kind: ItemKind; id: string; score: number; reasons: string[]; order: number };
+type Bump = (kind: ItemKind, ids: string[] | undefined, n: number, why?: string) => void;
+
+/** Núcleo de cada modo de tarefa: o que quase sempre ajuda a consertar ou a ajustar. */
+const TASK_CORE: Record<"erro" | "ajuste", { agent: [string, number][]; skill: [string, number][]; mcp: [string, number][]; why: string }> = {
+  erro: {
+    agent: [["triagem-bugs", 14], ["gerador-testes", 10], ["revisor-codigo", 8]],
+    skill: [["plano-testes", 10], ["revisao-pr", 8], ["post-mortem", 5], ["runbook-incidentes", 4]],
+    mcp: [["playwright", 6], ["github", 5], ["sentry", 5], ["context7", 4]],
+    why: "ajuda a reproduzir, achar a causa e corrigir o erro que você descreveu",
+  },
+  ajuste: {
+    agent: [["revisor-codigo", 12], ["gerador-testes", 7], ["changelog-release", 5]],
+    skill: [["revisao-pr", 10], ["commits-changelog", 9], ["seguranca-pre-deploy", 5]],
+    mcp: [["context7", 6], ["github", 5]],
+    why: "mantém a mudança pequena, revisada e registrada",
+  },
+};
+
+/** Assunto da tarefa: puxa o especialista certo. */
+const TASK_RULES: { when: RegExp; boost: Partial<Record<ItemKind, string[]>>; why: string }[] = [
+  { when: /texto|copy|titulo|botao|frase|mensagem de|chamada/, boost: { agent: ["copy-landing-page"] }, why: "a mudança mexe em textos da interface" },
+  { when: /tela|layout|design|css|cor\b|cores|estilo|componente|\bui\b|responsiv|celular|mobile/, boost: { agent: ["design-system-ui"], skill: ["checklist-acessibilidade"], mcp: ["playwright", "figma"] }, why: "envolve a interface" },
+  { when: /campo|formulario|banco|tabela|coluna|schema|migra|query|sql|supabase|postgres/, boost: { agent: ["modelagem-dados", "analista-dados-sql"], mcp: ["supabase"] }, why: "envolve dados e banco" },
+  { when: /e-?mail|notifica/, boost: { agent: ["email-lifecycle"], skill: ["escrita-email-lifecycle"] }, why: "envolve e-mails ou notificações" },
+  { when: /preco|plano|assinatura|pagamento|cobranca|checkout|stripe|pix|boleto/, boost: { agent: ["pricing-planos", "cobranca-inadimplencia"], skill: ["copy-precos"], mcp: ["stripe"] }, why: "envolve pagamento ou planos" },
+  { when: /\bapi\b|endpoint|rota|webhook|integra/, boost: { agent: ["documentacao-tecnica"], skill: ["documentacao-api", "versionamento"] }, why: "envolve API ou integração" },
+  { when: /lento|lentid|timeout|demora|travando|memoria|performance/, boost: { agent: ["performance-web"], mcp: ["sentry"] }, why: "o problema é de desempenho" },
+  { when: /login|senha|permiss|acesso|token|autentic|seguran|vazament|invas/, boost: { agent: ["seguranca-owasp"], skill: ["seguranca-pre-deploy"] }, why: "envolve acesso e segurança" },
+  { when: /dado pessoal|dados pessoais|cpf|lgpd|privacidade|consentimento/, boost: { agent: ["termos-privacidade-lgpd"], skill: ["checklist-lgpd"] }, why: "envolve dados pessoais" },
+  { when: /deploy|vercel|build|producao|ambiente/, boost: { agent: ["planejamento-deploy"], mcp: ["vercel"] }, why: "envolve build ou deploy" },
+  { when: /seo|google|meta tag|indexa/, boost: { agent: ["seo-conteudo"], skill: ["auditoria-seo-on-page"] }, why: "envolve SEO" },
+  { when: /acessib|leitor de tela|contraste|teclado/, boost: { skill: ["checklist-acessibilidade"] }, why: "envolve acessibilidade" },
+];
+
+function scoreTask(mode: "erro" | "ajuste", text: string, all: (Scored & { foundation?: boolean })[], bump: Bump) {
+  // Kit enxuto: fundação e agentes de negócio só entram se o assunto da tarefa pedir.
+  for (const it of all) {
+    if (it.kind === "agent") it.score -= 4;
+    if ((it as { foundation?: boolean }).foundation) it.score -= 4;
+  }
+  const core = TASK_CORE[mode];
+  for (const [id, n] of core.agent) bump("agent", [id], n, core.why);
+  for (const [id, n] of core.skill) bump("skill", [id], n, core.why);
+  for (const [id, n] of core.mcp) bump("mcp", [id], n, core.why);
+  for (const r of TASK_RULES) {
+    if (!r.when.test(text)) continue;
+    // Especialista do assunto: na frente do núcleo.
+    for (const k of ["agent", "skill", "mcp"] as const) {
+      for (const id of r.boost[k] ?? []) {
+        const it = all.find((x) => x.kind === k && x.id === id);
+        if (it) {
+          it.score += 12;
+          it.reasons.unshift(r.why);
+        }
+      }
+    }
+  }
+}
 
 export function scoreCatalog(req: Pick<RecommendRequest, "mode" | "saas">): Scored[] {
   const { saas, mode } = req;
-  const text = norm([saas.niche, saas.description, saas.problem, saas.goal].join(" \n "));
+  const text = norm([saas.niche, saas.description, saas.problem, saas.goal, saas.task, saas.details].join(" \n "));
   const stack = norm(saas.stack.join(" "));
   const all: Scored[] = [
     ...agents.map((a, i) => ({ kind: "agent" as const, id: a.id, score: 0, reasons: [] as string[], order: i, applies: a.appliesTo, stages: a.stages, foundation: a.foundation })),
@@ -211,7 +269,7 @@ export function scoreCatalog(req: Pick<RecommendRequest, "mode" | "saas">): Scor
   for (const it of all) {
     const meta = it as Scored & { applies: Audience; stages: Stage[]; foundation: boolean };
     if (!fits(meta.applies, saas.model)) meta.score -= 20;
-    else if (meta.applies === saas.model) {
+    else if (saas.model && meta.applies === saas.model) {
       meta.score += 2;
       meta.reasons.push(`foi pensado para negócios ${saas.model}`);
     }
@@ -248,6 +306,7 @@ export function scoreCatalog(req: Pick<RecommendRequest, "mode" | "saas">): Scor
   } else {
     bump("mcp", ["context7"], 3, "mantém o Claude atualizado sobre as bibliotecas que você escolher");
   }
+  if (isTaskMode(mode)) scoreTask(mode, text, all, bump);
   bump("mcp", NATIVE_MCPS, -6);
 
   return all;
@@ -273,7 +332,13 @@ function writeReason(kind: ItemKind, it: Scored, saas: SaasInfo): string {
 
 /** Recomendações locais no mesmo formato da IA, respeitando tipos, quantidades e exclusões. */
 export function localRecommendations(req: RecommendRequest): RecommendedItem[] {
-  const counts = req.more ? { agent: 5, skill: 4, mcp: 3 } : { agent: 10, skill: 8, mcp: 5 };
+  const counts = isTaskMode(req.mode)
+    ? req.more
+      ? { agent: 2, skill: 2, mcp: 2 }
+      : { agent: 4, skill: 4, mcp: 3 }
+    : req.more
+      ? { agent: 5, skill: 4, mcp: 3 }
+      : { agent: 10, skill: 8, mcp: 5 };
   const scored = scoreCatalog(req);
   const out: RecommendedItem[] = [];
   for (const kind of req.kinds) {

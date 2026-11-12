@@ -1,15 +1,16 @@
 import { z } from "zod";
 import { agentById, agents, mcpById, mcps, skillById, skills, type ItemKind } from "@/data/catalog";
-import { recommendationSchema, type Recommendation, type RecommendRequest } from "@/lib/schemas";
+import { isTaskMode, recommendationSchema, type Recommendation, type RecommendRequest } from "@/lib/schemas";
 import { safeParseJson } from "./parse";
 
 export type RecommendedItem = Recommendation & { kind: ItemKind };
 
 export const lineSchema = recommendationSchema.extend({ kind: z.enum(["agent", "skill", "mcp"]) });
 
-export function countsFor(req: Pick<RecommendRequest, "kinds" | "more">) {
-  const initial = { agent: [8, 12], skill: [6, 10], mcp: [5, 8] } as const;
-  const more = { agent: [4, 6], skill: [3, 5], mcp: [2, 4] } as const;
+export function countsFor(req: Pick<RecommendRequest, "kinds" | "more"> & { mode?: RecommendRequest["mode"] }) {
+  const task = isTaskMode(req.mode);
+  const initial = task ? ({ agent: [3, 5], skill: [3, 5], mcp: [2, 3] } as const) : ({ agent: [8, 12], skill: [6, 10], mcp: [5, 8] } as const);
+  const more = task ? ({ agent: [2, 3], skill: [2, 3], mcp: [1, 2] } as const) : ({ agent: [4, 6], skill: [3, 5], mcp: [2, 4] } as const);
   const base = req.more ? more : initial;
   const out: Partial<Record<ItemKind, [number, number]>> = {};
   for (const k of req.kinds) out[k] = [base[k][0], base[k][1]];
@@ -37,7 +38,7 @@ export class RecommendationFilter {
   private count: Record<ItemKind, number> = { agent: 0, skill: 0, mcp: 0 };
 
   constructor(
-    private req: Pick<RecommendRequest, "kinds" | "excludeIds" | "more">,
+    private req: Pick<RecommendRequest, "kinds" | "excludeIds" | "more"> & { mode?: RecommendRequest["mode"] },
     private counts = countsFor(req),
   ) {}
 

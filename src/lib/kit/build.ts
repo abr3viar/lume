@@ -2,6 +2,7 @@ import { brand } from "@/config/brand";
 import type { CatalogAgent, Mcp, Skill } from "@/data/catalog";
 import { agentById, mcpById, skillById } from "@/data/catalog";
 import {
+  isTaskMode,
   STAGE_LABEL,
   TECH_LABEL,
   type ContextPersonalization,
@@ -32,6 +33,8 @@ export type KitInput = {
 };
 
 export const DISCOVERY_MARK = "MODO DESCOBERTA ATIVO";
+export const FIX_MARK = "MODO CONSERTO ATIVO";
+export const QUICK_MARK = "MODO AJUSTE RÁPIDO ATIVO";
 const RISK_LABEL: Record<Mcp["riskLevel"], string> = {
   leitura: "Somente leitura",
   escrita: "Escreve dados",
@@ -168,6 +171,41 @@ function discoveryBlock(): string {
 `;
 }
 
+function fixBlock(): string {
+  return `> [!IMPORTANT]
+> **${FIX_MARK}. Leia antes de qualquer ação.**
+>
+> Este kit existe para consertar UM erro, descrito no \`TAREFA.md\`. Regras:
+>
+> 1. Leia o \`TAREFA.md\`. Se faltar informação para reproduzir o erro, pergunte antes de mexer (no máximo 4 perguntas por vez).
+> 2. Reproduza o erro antes de alterar qualquer coisa: com um teste que falha, um comando ou os passos descritos. Se não conseguir reproduzir, diga o que tentou e pare.
+> 3. Encontre a causa raiz e explique em poucas frases, com o arquivo e a linha. Corrija a causa, não o sintoma.
+> 4. Proponha a correção mínima (quais arquivos e por quê) e PEÇA aprovação antes de editar.
+> 5. Não refatore, não renomeie e não "melhore" código que não tem relação com o erro. Se notar outros problemas, só liste no final.
+> 6. Depois de corrigir, escreva ou atualize um teste que impeça o erro de voltar e rode os testes do projeto.
+> 7. Termine com um resumo: causa, correção, arquivos alterados, como verificar, e uma sugestão de mensagem de commit.
+> 8. Nunca peça para o usuário colar senhas, tokens ou dados de clientes. Se o erro envolver dados reais, use exemplos fictícios.
+> 9. Quando o erro estiver resolvido e aprovado, remova este bloco "${FIX_MARK}" do CLAUDE.md.
+`;
+}
+
+function quickBlock(): string {
+  return `> [!IMPORTANT]
+> **${QUICK_MARK}. Leia antes de qualquer ação.**
+>
+> Este kit existe para UMA mudança curta, descrita no \`TAREFA.md\`. Regras:
+>
+> 1. Leia o \`TAREFA.md\` e localize no código exatamente onde a mudança acontece.
+> 2. Se o pedido estiver ambíguo, faça no máximo 3 perguntas antes de começar.
+> 3. Mostre um plano curto: quais arquivos vão mudar e o que muda em cada um. PEÇA aprovação.
+> 4. Mantenha o escopo fechado: só o que foi pedido. Se a mudança crescer além de poucos arquivos, pare e avise antes de continuar.
+> 5. Siga o estilo e os padrões do código ao redor. Não reformate nem refatore o resto.
+> 6. Rode o lint, os testes e o build que o projeto já tiver, e corrija o que a mudança quebrar.
+> 7. Termine com um resumo do que mudou, como conferir e uma sugestão de mensagem de commit.
+> 8. Quando a mudança estiver concluída e aprovada, remova este bloco "${QUICK_MARK}" do CLAUDE.md.
+`;
+}
+
 export function claudeMd(input: KitInput): string {
   const { saas, mode } = input;
   const ctx = input.context;
@@ -175,7 +213,21 @@ export function claudeMd(input: KitInput): string {
   parts.push(`# ${saas.name}: instruções para o Claude Code\n`);
   parts.push(`_${brand.generatedBy} em ${formatDate(input.generatedAt)}._\n`);
   if (mode === "zero") parts.push(discoveryBlock());
+  if (mode === "erro") parts.push(fixBlock());
+  if (mode === "ajuste") parts.push(quickBlock());
 
+  if (isTaskMode(mode)) {
+    parts.push(`## Contexto do projeto
+
+| | |
+|---|---|
+| **Projeto** | ${cell(saas.name)} |
+| **O que o produto faz** | ${cell(val(saas.description, "_descobrir lendo o código_"))} |
+| **Stack** | ${cell(saas.stack.length ? saas.stack.join(", ") : "_descobrir analisando o código_")} |
+| **Tarefa** | ${mode === "erro" ? "Consertar um erro" : "Atualização rápida"} (detalhes no \`TAREFA.md\`) |
+| **Nível técnico de quem usa** | ${TECH_LABEL[tech(saas)]} |
+`);
+  } else
   parts.push(`## Contexto do SaaS
 
 | | |
@@ -184,7 +236,7 @@ export function claudeMd(input: KitInput): string {
 | **Descrição** | ${cell(saas.description)} |
 | **Nicho** | ${cell(val(saas.niche))} |
 | **Problema que resolve** | ${cell(val(saas.problem))} |
-| **Modelo** | ${saas.model} |
+| **Modelo** | ${saas.model ?? "_a confirmar_"} |
 | **Estágio** | ${saas.stage ? STAGE_LABEL[saas.stage] : "_a confirmar_"} |
 | **Stack** | ${cell(saas.stack.length ? saas.stack.join(", ") : mode === "zero" ? "_a definir na descoberta_" : "_descobrir analisando o código_")} |
 | **Objetivo do momento** | ${cell(val(saas.goal))} |
@@ -270,7 +322,7 @@ Este é o formulário da descoberta. O Claude vai confirmar o que já está escr
 ${q("Nome", s.name)}
 ${q("Descrição curta", s.description)}
 ${q("Nicho", s.niche)}
-${q("Modelo (B2B, B2C, B2B2C)", s.model)}
+${q("Modelo (B2B, B2C, B2B2C)", s.model ?? "")}
 ${q("Estágio", s.stage ? STAGE_LABEL[s.stage] : "")}
 
 ## Cliente e problema
@@ -307,6 +359,50 @@ _a preencher_
 `;
 }
 
+// ─────────────────────────── TAREFA.md (modos erro e ajuste) ───────────────────────────
+
+export function tarefaMd(input: KitInput): string {
+  const { saas, mode } = input;
+  const bug = mode === "erro";
+  const done = bug
+    ? [
+        "O erro foi reproduzido antes da correção.",
+        "A causa raiz foi explicada com arquivo e linha.",
+        "A correção é mínima e foi aprovada antes de ser aplicada.",
+        "Existe um teste que falharia se o erro voltasse.",
+        "Os testes do projeto passam.",
+      ]
+    : [
+        "A mudança faz exatamente o que foi pedido, e nada além.",
+        "O plano foi aprovado antes da edição.",
+        "Lint, testes e build do projeto passam.",
+        "O resumo explica como conferir a mudança.",
+      ];
+  return `# ${bug ? "Erro a consertar" : "Atualização rápida"}: ${saas.name}
+
+_${brand.generatedBy} em ${formatDate(input.generatedAt)}._
+
+## ${bug ? "O que está dando errado" : "O que mudar"}
+${saas.task.trim()}
+
+## ${bug ? "Como reproduzir e mensagem de erro" : "Onde fica e restrições"}
+${saas.details.trim() || "_não informado: pergunte ao usuário se precisar_"}
+
+## Contexto
+- Projeto: ${saas.name}
+- O que o produto faz: ${val(saas.description, "_descobrir lendo o código_")}
+- Stack: ${saas.stack.length ? saas.stack.join(", ") : "_descobrir analisando o código_"}
+
+## Pronto quando
+${done.map((d) => `- [ ] ${d}`).join("\n")}
+
+## Registro (o Claude preenche ao terminar)
+${bug ? "- Causa raiz:\n- Correção:\n- Teste de regressão:" : "- O que mudou:"}
+- Arquivos alterados:
+- Como conferir:
+`;
+}
+
 // ─────────────────────────── PROMPT-DE-ATIVACAO.md ───────────────────────────
 
 export function activationPrompt(input: KitInput): string {
@@ -317,6 +413,37 @@ _${brand.generatedBy}._ Copie tudo que está dentro do bloco abaixo e cole no Cl
 
 `;
   const hasMcps = input.mcps.length > 0;
+  const level = TECH_LABEL[tech(saas)].toLowerCase();
+  if (input.mode === "erro") {
+    return `${header}\`\`\`text
+Olá! Preciso consertar um erro no ${saas.name}. O MODO CONSERTO está ativo no CLAUDE.md.
+
+1. Leia o CLAUDE.md e o TAREFA.md, com a descrição do erro e como reproduzir.
+2. Olhe a estrutura do projeto só o necessário para achar o código envolvido.
+3. Reproduza o erro (de preferência com um teste que falha). Se faltar informação, me pergunte antes.
+4. Me explique a causa raiz com o arquivo e a linha, e proponha a correção mínima. Espere minha aprovação.
+5. Aplique a correção, adicione um teste de regressão e rode os testes do projeto.
+6. Termine com um resumo: causa, correção, arquivos alterados, como eu confiro e uma sugestão de mensagem de commit.
+${hasMcps ? "7. Se algum MCP do .mcp.json ajudar (ex.: logs de erro), me diga como conectar. Nunca me peça senhas ou chaves aqui no chat.\n" : ""}
+Não mexa em nada que não tenha relação com o erro. Fale comigo em português e no nível ${level}.
+\`\`\`
+`;
+  }
+  if (input.mode === "ajuste") {
+    return `${header}\`\`\`text
+Olá! Quero fazer uma atualização rápida no ${saas.name}. O MODO AJUSTE RÁPIDO está ativo no CLAUDE.md.
+
+1. Leia o CLAUDE.md e o TAREFA.md, com a mudança que eu quero.
+2. Encontre no código exatamente onde a mudança acontece.
+3. Me mostre um plano curto: quais arquivos mudam e o que muda em cada um. Espere minha aprovação.
+4. Faça só o que foi pedido, seguindo o estilo do código ao redor. Se crescer além de poucos arquivos, pare e me avise.
+5. Rode o lint, os testes e o build que o projeto tiver.
+6. Termine com um resumo do que mudou, como eu confiro e uma sugestão de mensagem de commit.
+
+Fale comigo em português e no nível ${level}.
+\`\`\`
+`;
+  }
   if (input.mode === "zero") {
     return `${header}\`\`\`text
 Olá! Vamos começar o ${saas.name} do zero, juntos.
@@ -387,7 +514,7 @@ ${tree}
 - **.claude/agents/**: os agentes (subagents). Cada um é um especialista que o Claude chama para uma tarefa.
 - **.claude/skills/**: as skills. São instruções que o Claude ativa quando o pedido combina com elas.
 ${input.mcps.length ? "- **.mcp.json**: os servidores MCP, que conectam o Claude a outras ferramentas.\n- **.env.example**: a lista das variáveis que os MCPs precisam, sem valores.\n" : ""}- **PROMPT-DE-ATIVACAO.md**: a primeira mensagem para colar no Claude Code.
-${mode === "zero" ? "- **BRIEFING.md**: o formulário da descoberta, que o Claude vai preencher com você.\n" : ""}`);
+${mode === "zero" ? "- **BRIEFING.md**: o formulário da descoberta, que o Claude vai preencher com você.\n" : ""}${isTaskMode(mode) ? `- **TAREFA.md**: ${mode === "erro" ? "o erro a consertar, como reproduzir" : "a mudança pedida"} e o que significa "pronto". Pode editar antes de começar.\n` : ""}`);
 
   s.push(`## 2. Pré-requisitos
 
@@ -498,7 +625,15 @@ ${input.mcps.length ? "- **MCPs:** digite `/mcp` para ver o status de cada servi
 
   s.push(`## 8. Cole o prompt de ativação
 
-Abra \`PROMPT-DE-ATIVACAO.md\`, copie o texto do bloco e cole no Claude Code. ${mode === "zero" ? "Ele vai começar a entrevista da descoberta: responda com calma, em blocos." : "Ele vai analisar o seu código e adaptar o kit."}
+Abra \`PROMPT-DE-ATIVACAO.md\`, copie o texto do bloco e cole no Claude Code. ${
+    mode === "zero"
+      ? "Ele vai começar a entrevista da descoberta: responda com calma, em blocos."
+      : mode === "erro"
+        ? "Ele vai reproduzir o erro, explicar a causa e propor a correção antes de mexer."
+        : mode === "ajuste"
+          ? "Ele vai localizar a mudança, mostrar um plano curto e esperar sua aprovação."
+          : "Ele vai analisar o seu código e adaptar o kit."
+  }
 `);
 
   s.push(`## 9. Revise e aprove o plano
@@ -582,6 +717,7 @@ export function buildKitFiles(input: KitInput): KitFile[] {
     core.push({ path: ".env.example", content: envExample(input.mcps) });
   }
   if (input.mode === "zero") core.push({ path: "BRIEFING.md", content: briefingMd(input) });
+  if (isTaskMode(input.mode)) core.push({ path: "TAREFA.md", content: tarefaMd(input) });
 
   const allPaths = [...core.map((f) => f.path), "LEIA-ME.md"];
   const tree = `${root}/\n${renderTreeText(buildTree(allPaths))}`;

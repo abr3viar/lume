@@ -1,6 +1,6 @@
 "use client";
 
-import { FolderGit2, Sprout } from "lucide-react";
+import { Bug, FolderGit2, Sprout, Zap } from "lucide-react";
 import { RadioGroup } from "radix-ui";
 import { cn } from "@/lib/utils";
 import type { Mode } from "@/lib/schemas";
@@ -32,6 +32,28 @@ const OPTIONS: { value: Mode; title: string; text: string; points: string[]; Ico
     ],
     Icon: Sprout,
   },
+  {
+    value: "erro",
+    title: "Consertar um erro",
+    text: "Algo quebrou ou não funciona como deveria.",
+    points: [
+      "Modo Conserto: reproduz antes de mexer",
+      "Corrige a causa, não o sintoma",
+      "Teste que impede o erro de voltar",
+    ],
+    Icon: Bug,
+  },
+  {
+    value: "ajuste",
+    title: "Fazer uma atualização rápida",
+    text: "Uma mudança curta: texto, botão, campo, regra.",
+    points: [
+      "Modo Ajuste Rápido: escopo pequeno e fechado",
+      "Plano curto e aprovação antes de mexer",
+      "Revisão e resumo do que mudou",
+    ],
+    Icon: Zap,
+  },
 ];
 
 export function StepMode() {
@@ -48,7 +70,7 @@ export function StepMode() {
   return (
     <div className="wrap py-12 lg:py-16">
       <StepHeader title="Como você vai usar o kit?">
-        Essa escolha muda o que vai no pacote e como o Claude começa a trabalhar. Dá para trocar depois.
+        Para construir, adaptar, consertar ou ajustar. Essa escolha muda o que vai no pacote e como o Claude começa a trabalhar. Dá para trocar depois.
       </StepHeader>
       <RadioGroup.Root
         value={mode ?? ""}
@@ -70,7 +92,7 @@ export function StepMode() {
                 if (e.key === "Enter") choose(value);
               }}
               className={cn(
-                "group relative flex flex-col rounded-[1.75rem] border p-7 text-left transition-[border-color,box-shadow,transform] duration-300 ease-out-soft sm:p-9",
+                "group relative flex flex-col rounded-[1.75rem] border p-7 text-left transition-[border-color,box-shadow,transform] duration-300 ease-out-soft sm:p-8",
                 "hover:-translate-y-0.5 hover:shadow-lift focus-visible:rounded-[1.75rem]",
                 selected ? "border-ink bg-surface shadow-lift [[data-theme=dark]_&]:border-brand" : "border-line bg-bg",
               )}
@@ -83,9 +105,9 @@ export function StepMode() {
               >
                 <Icon className="size-6" />
               </span>
-              <span className="mt-8 font-display text-3xl font-semibold tracking-[-0.02em]">{title}</span>
+              <span className="mt-6 font-display text-2xl font-semibold tracking-[-0.02em] sm:text-[1.7rem]">{title}</span>
               <span className="mt-2 text-ink-2">{text}</span>
-              <ul className="mt-6 space-y-2 text-sm text-ink-2">
+              <ul className="mt-5 space-y-2 text-sm text-ink-2">
                 {points.map((p) => (
                   <li key={p} className="flex gap-2.5">
                     <span className="mt-[0.55rem] block size-1.5 shrink-0 rounded-full bg-brand" aria-hidden />

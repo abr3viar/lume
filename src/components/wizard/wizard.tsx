@@ -3,6 +3,7 @@
 import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { Check } from "lucide-react";
 import { useEffect, useRef } from "react";
+import { isTaskMode } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { useKit, useUi, type Step } from "@/store/kit-store";
 import { stepActions } from "./step-actions";
@@ -27,6 +28,7 @@ function Progress() {
   const mode = useKit((s) => s.mode);
   const generating = step === 5;
   const pct = ((step - 1) / (STEPS.length - 1)) * 100;
+  const label = (s: (typeof STEPS)[number]) => (s.n === 2 && isTaskMode(mode) ? "Sobre a tarefa" : s.label);
 
   return (
     <nav aria-label="Etapas" className="sticky top-16 z-30 border-b border-line/70 bg-bg/85 backdrop-blur-xl">
@@ -50,7 +52,7 @@ function Progress() {
                     disabled={!reachable || current}
                     onClick={() => setStep(s.n)}
                     aria-current={current ? "step" : undefined}
-                    aria-label={`Etapa ${s.n}: ${s.label}${done ? ", concluída" : ""}`}
+                    aria-label={`Etapa ${s.n}: ${label(s)}${done ? ", concluída" : ""}`}
                     className={cn(
                       "grid size-[27px] place-items-center rounded-full border text-xs font-semibold tabular-nums transition-colors duration-300",
                       current && "border-brand bg-brand text-brand-ink",
@@ -68,7 +70,7 @@ function Progress() {
                       current ? "font-medium text-ink" : "text-ink-3",
                     )}
                   >
-                    {s.label}
+                    {label(s)}
                   </span>
                 </li>
               );
@@ -76,7 +78,7 @@ function Progress() {
           </ol>
         </div>
         <p className="mt-1 text-center text-xs font-medium sm:hidden" aria-hidden>
-          {STEPS[step - 1].label}
+          {label(STEPS[step - 1])}
         </p>
       </div>
     </nav>

@@ -12,6 +12,7 @@ import { presets, type ItemKind } from "@/data/catalog";
 import { fetchRecommendations, RecommendError } from "@/lib/client/recommend";
 import { itemMeta, KIND_LABEL } from "@/lib/item-meta";
 import { adaptPreset } from "@/lib/presets-adapt";
+import { isTaskMode } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { cartCount, formToInput, recsKeyFor, useKit, useUi } from "@/store/kit-store";
 import { Chip } from "./fields";
@@ -108,7 +109,10 @@ function Presets() {
         <p className="hidden text-sm text-ink-3 sm:block">Um clique adiciona o conjunto, ajustado ao seu SaaS.</p>
       </div>
       <div className="-mx-[clamp(1.25rem,4vw,2.5rem)] flex snap-x gap-3 overflow-x-auto px-[clamp(1.25rem,4vw,2.5rem)] pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0">
-        {presets.map((p) => {
+        {presets
+          .filter((p) => !p.modes || (mode && p.modes.includes(mode)))
+          .sort((a, b) => Number(!!b.modes) - Number(!!a.modes))
+          .map((p) => {
           const a = adaptPreset(p, { model, mode, recommended });
           return (
             <article
@@ -256,6 +260,7 @@ export function StepRecs() {
   const set = useUi((s) => s.set);
   const status = useUi((s) => s.recStatus);
   const source = useKit((s) => s.recsSource);
+  const mode = useKit((s) => s.mode);
   const total = cartCount(cart);
 
   const next = () => {
@@ -281,9 +286,11 @@ export function StepRecs() {
   return (
     <div className="wrap py-12 lg:py-16">
       <StepHeader title={`Sugestões para o ${name.trim() || "seu SaaS"}`}>
-        {source === "local"
-          ? "Escolhemos do catálogo o que mais combina com o nicho, o modelo, o estágio, o objetivo e a stack que você contou. Adicione ao kit o que fizer sentido."
-          : "A IA escolheu do catálogo o que mais combina com o que você contou. Adicione ao kit o que fizer sentido."}
+        {isTaskMode(mode)
+          ? `${source === "local" ? "Escolhemos do catálogo o que mais combina com a tarefa que você descreveu." : "A IA escolheu do catálogo o que mais combina com a tarefa que você descreveu."} Para ${mode === "erro" ? "consertar um erro" : "uma mudança curta"}, menos é mais: fique só com o essencial.`
+          : source === "local"
+            ? "Escolhemos do catálogo o que mais combina com o nicho, o modelo, o estágio, o objetivo e a stack que você contou. Adicione ao kit o que fizer sentido."
+            : "A IA escolheu do catálogo o que mais combina com o que você contou. Adicione ao kit o que fizer sentido."}
       </StepHeader>
 
       <Presets />

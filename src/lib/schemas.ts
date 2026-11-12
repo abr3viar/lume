@@ -21,8 +21,27 @@ const text = (label: string, min = 0) =>
         .min(min, min > 0 ? `${label} precisa ter pelo menos ${min} caracteres.` : undefined),
     );
 
-export const modeSchema = z.enum(["existente", "zero"]);
+/**
+ * Modos de uso do kit:
+ * - existente: adaptar o kit a um projeto que já tem código;
+ * - zero: começar o SaaS do zero (Modo Descoberta);
+ * - erro: consertar um erro específico (Modo Conserto);
+ * - ajuste: fazer uma atualização curta e pontual (Modo Ajuste Rápido).
+ */
+export const modeSchema = z.enum(["existente", "zero", "erro", "ajuste"]);
 export type Mode = z.infer<typeof modeSchema>;
+
+/** Modos de tarefa pontual: kit enxuto, focado em uma tarefa descrita pela pessoa. */
+export function isTaskMode(mode: Mode | null | undefined): mode is "erro" | "ajuste" {
+  return mode === "erro" || mode === "ajuste";
+}
+
+export const MODE_LABEL: Record<Mode, string> = {
+  existente: "Projeto existente",
+  zero: "Começar do zero",
+  erro: "Consertar um erro",
+  ajuste: "Atualização rápida",
+};
 
 export const businessModelSchema = z.enum(["B2B", "B2C", "B2B2C"], {
   error: "Escolha o modelo do seu SaaS.",
@@ -53,14 +72,18 @@ export const TECH_LABEL: Record<TechLevel, string> = {
 /** Campos do formulário "Sobre o SaaS". Opcionalidade depende do modo (ver `saasInfoSchemaFor`). */
 const baseShape = {
   name: text("O nome", 2).pipe(z.string().max(80, "O nome pode ter no máximo 80 caracteres.")),
-  description: text("A descrição", 10),
+  description: text("A descrição").default(""),
   niche: text("O nicho").default(""),
   problem: text("O problema").default(""),
-  model: businessModelSchema,
+  model: businessModelSchema.optional(),
   stage: saasStageSchema.optional(),
   stack: z.array(text("Item da stack").pipe(z.string().max(40))).max(20).default([]),
   goal: text("O objetivo").default(""),
   techLevel: techLevelSchema.optional(),
+  /** Modos erro/ajuste: o que está quebrado ou o que mudar. */
+  task: text("A tarefa").default(""),
+  /** Modos erro/ajuste: passos para reproduzir, mensagem de erro, onde fica no código. */
+  details: text("Os detalhes").default(""),
 };
 
 export const saasInfoSchema = z.object(baseShape);
@@ -68,11 +91,26 @@ export type SaasInfo = z.output<typeof saasInfoSchema>;
 export type SaasInfoInput = z.input<typeof saasInfoSchema>;
 
 /**
- * No modo "projeto existente", nicho, problema, estágio e nível técnico são obrigatórios.
- * No modo "do zero", só nome, descrição e modelo são obrigatórios.
+ * Obrigatórios por modo:
+ * - existente: nome, descrição, modelo, nicho, problema, estágio e nível técnico;
+ * - zero: nome, descrição e modelo;
+ * - erro/ajuste: nome do projeto e a tarefa (o resto é opcional).
  */
 export function saasInfoSchemaFor(mode: Mode) {
   return saasInfoSchema.superRefine((v, ctx) => {
+    if (isTaskMode(mode)) {
+      if (v.task.length < 10) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["task"],
+          message: mode === "erro" ? "Descreva o erro em pelo menos 10 caracteres." : "Descreva a mudança em pelo menos 10 caracteres.",
+        });
+      }
+      return;
+    }
+    if (v.description.length < 10)
+      ctx.addIssue({ code: "custom", path: ["description"], message: "A descrição precisa ter pelo menos 10 caracteres." });
+    if (!v.model) ctx.addIssue({ code: "custom", path: ["model"], message: "Escolha o modelo do seu SaaS." });
     if (mode === "zero") return;
     if (v.niche.length < 2) ctx.addIssue({ code: "custom", path: ["niche"], message: "Conte qual é o nicho." });
     if (v.problem.length < 10)

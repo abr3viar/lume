@@ -164,6 +164,8 @@ export const presetSchema = z.object({
   agents: z.array(z.string()).min(1),
   skills: z.array(z.string()).min(1),
   mcps: z.array(z.string()),
+  /** Modos em que o kit aparece. Sem o campo, aparece em todos. */
+  modes: z.array(z.enum(["existente", "zero", "erro", "ajuste"])).optional(),
 });
 
 export type AgentInput = z.input<typeof agentSchema>;

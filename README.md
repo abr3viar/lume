@@ -4,6 +4,17 @@
 
 O nome e os textos da marca ficam em [`src/config/brand.ts`](src/config/brand.ts). A cor principal fica em `--brand` em [`src/app/globals.css`](src/app/globals.css).
 
+## Tipos de kit
+
+| Tipo | Para quê | O que muda no kit |
+|---|---|---|
+| **Já tenho um projeto** | Adaptar o Claude Code a um SaaS que já tem código | Kit completo; o prompt pede análise do código e adaptação dos agentes |
+| **Vou começar do zero** | Construir o SaaS junto com o Claude | Modo Descoberta no `CLAUDE.md` + `BRIEFING.md`; entrevista antes de construir |
+| **Consertar um erro** | Corrigir um bug específico | Kit enxuto + Modo Conserto + `TAREFA.md`: reproduzir, causa raiz, correção mínima aprovada, teste de regressão |
+| **Atualização rápida** | Uma mudança curta e pontual | Kit enxuto + Modo Ajuste Rápido + `TAREFA.md`: plano curto aprovado, escopo fechado, resumo e commit |
+
+Nos modos de erro e de atualização, o formulário pede só o nome do projeto e a tarefa (detalhes, stack e nível técnico são opcionais).
+
 ## Modos de IA
 
 O Lume escolhe o modo automaticamente, nesta ordem:

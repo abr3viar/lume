@@ -3,7 +3,7 @@
 import { Plus, X } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { MAX_FIELD, saasInfoSchemaFor, STAGE_LABEL, TECH_LABEL, type SaasStage, type TechLevel } from "@/lib/schemas";
+import { isTaskMode, MAX_FIELD, saasInfoSchemaFor, STAGE_LABEL, TECH_LABEL, type SaasStage, type TechLevel } from "@/lib/schemas";
 import { formToInput, useKit, type SaasForm } from "@/store/kit-store";
 import { Chip, Field, Segmented, TextArea, TextInput } from "./fields";
 import { useStepNext } from "./step-actions";
@@ -13,7 +13,7 @@ const NICHES = ["Fintech", "Educação", "Saúde", "E-commerce", "RH", "Marketin
 const STACKS = ["Next.js", "React", "Node.js", "Python", "Django", "Laravel", "Ruby on Rails", "Supabase", "Firebase", "PostgreSQL", "Vercel", "AWS", "Flutter", "React Native", "WordPress", "Bubble"];
 
 type Errors = Partial<Record<keyof SaasForm, string>>;
-const ORDER: (keyof SaasForm)[] = ["name", "description", "niche", "problem", "model", "stage", "stack", "goal", "techLevel"];
+const ORDER: (keyof SaasForm)[] = ["name", "task", "details", "description", "niche", "problem", "model", "stage", "stack", "goal", "techLevel"];
 
 export function StepAbout() {
   const mode = useKit((s) => s.mode)!;
@@ -23,7 +23,9 @@ export function StepAbout() {
   const [errors, setErrors] = useState<Errors>({});
   const [stackDraft, setStackDraft] = useState("");
   const zero = mode === "zero";
-  const optional = zero ? "opcional" : false;
+  const task = isTaskMode(mode);
+  const bug = mode === "erro";
+  const optional = zero || task ? "opcional" : false;
   const laterHint = "Pode deixar em branco, o Claude vai perguntar depois.";
 
   const update = (patch: Partial<SaasForm>) => {
@@ -62,10 +64,14 @@ export function StepAbout() {
 
   return (
     <div className="wrap py-12 lg:py-16">
-      <StepHeader title="Conte sobre o seu SaaS">
-        {zero
-          ? "Só nome, descrição e modelo são obrigatórios. O resto o Claude pergunta na entrevista de descoberta."
-          : "Quanto mais específico, mais certeiras ficam as sugestões e a personalização do kit."}
+      <StepHeader title={bug ? "Conte qual é o erro" : task ? "Conte o que você quer mudar" : "Conte sobre o seu SaaS"}>
+        {bug
+          ? "Só o nome do projeto e o erro são obrigatórios. Quanto mais detalhes de como reproduzir, mais rápido o Claude acha a causa."
+          : task
+            ? "Só o nome do projeto e a mudança são obrigatórios. O kit vem enxuto, focado nessa tarefa."
+            : zero
+              ? "Só nome, descrição e modelo são obrigatórios. O resto o Claude pergunta na entrevista de descoberta."
+              : "Quanto mais específico, mais certeiras ficam as sugestões e a personalização do kit."}
       </StepHeader>
 
       <form
@@ -76,7 +82,12 @@ export function StepAbout() {
         }}
         className="grid max-w-3xl gap-8"
       >
-        <Field id="f-name" label="Nome do produto" error={errors.name} counter={{ value: form.name.length, max: 80 }}>
+        <Field
+          id="f-name"
+          label={task ? "Nome do projeto" : "Nome do produto"}
+          error={errors.name}
+          counter={{ value: form.name.length, max: 80 }}
+        >
           <TextInput
             id="f-name"
             value={form.name}
@@ -89,10 +100,62 @@ export function StepAbout() {
           />
         </Field>
 
+        {task && (
+          <>
+            <Field
+              id="f-task"
+              label={bug ? "O que está dando errado?" : "O que você quer mudar?"}
+              hint={bug ? "O que acontece e o que deveria acontecer." : "Uma mudança por kit: curta e bem definida."}
+              error={errors.task}
+              counter={{ value: form.task.length, max: MAX_FIELD }}
+            >
+              <TextArea
+                id="f-task"
+                value={form.task}
+                maxLength={MAX_FIELD}
+                placeholder={
+                  bug
+                    ? "Ex.: Ao salvar um agendamento, a página dá erro 500. Deveria salvar e mostrar a confirmação."
+                    : "Ex.: Trocar o texto do botão de cadastro e adicionar o campo telefone (opcional) no formulário."
+                }
+                invalid={!!errors.task}
+                aria-describedby={desc("task")}
+                onChange={(e) => update({ task: e.target.value })}
+              />
+            </Field>
+            <Field
+              id="f-details"
+              label={bug ? "Como reproduzir e mensagem de erro" : "Onde fica e restrições"}
+              optional="opcional"
+              hint={
+                bug
+                  ? "Passos, página ou rota, e o texto do erro. Não cole senhas, tokens ou dados de clientes."
+                  : "Página, arquivo ou tela, se souber, e o que não pode mudar."
+              }
+              error={errors.details}
+              counter={{ value: form.details.length, max: MAX_FIELD }}
+            >
+              <TextArea
+                id="f-details"
+                value={form.details}
+                maxLength={MAX_FIELD}
+                placeholder={
+                  bug
+                    ? "Ex.: 1. Entrar em /agenda 2. Clicar em Novo 3. Salvar. Console: TypeError: Cannot read properties of undefined (reading 'id')"
+                    : "Ex.: Página /cadastro. Não mudar o layout nem as cores."
+                }
+                aria-describedby={desc("details")}
+                onChange={(e) => update({ details: e.target.value })}
+              />
+            </Field>
+          </>
+        )}
+
         <Field
           id="f-description"
-          label="Descrição curta"
-          hint="O que o produto faz, em uma ou duas frases."
+          label={task ? "O que o produto faz" : "Descrição curta"}
+          optional={task ? "opcional" : false}
+          hint={task ? "Uma frase de contexto ajuda o Claude a entender o projeto." : "O que o produto faz, em uma ou duas frases."}
           error={errors.description}
           counter={{ value: form.description.length, max: MAX_FIELD }}
         >
@@ -107,6 +170,8 @@ export function StepAbout() {
           />
         </Field>
 
+        {!task && (
+          <>
         <Field id="f-model" label="Modelo de negócio" error={errors.model}>
           <Segmented
             id="f-model"
@@ -177,8 +242,21 @@ export function StepAbout() {
             options={(Object.keys(STAGE_LABEL) as SaasStage[]).map((v) => ({ value: v, label: STAGE_LABEL[v] }))}
           />
         </Field>
+          </>
+        )}
 
-        <Field id="f-stack" label="Stack" optional="opcional" hint={zero ? laterHint : "Toque para marcar ou escreva outra e aperte Enter."}>
+        <Field
+          id="f-stack"
+          label="Stack"
+          optional="opcional"
+          hint={
+            zero
+              ? laterHint
+              : task
+                ? "Ajuda o Claude a achar os arquivos e comandos certos."
+                : "Toque para marcar ou escreva outra e aperte Enter."
+          }
+        >
           <div className="flex flex-wrap gap-2" role="group" aria-label="Tecnologias">
             {[...new Set([...STACKS, ...form.stack])].map((s) => (
               <Chip key={s} selected={form.stack.includes(s)} onClick={() => toggleStack(s)}>
@@ -219,6 +297,7 @@ export function StepAbout() {
           </div>
         </Field>
 
+        {!task && (
         <Field
           id="f-goal"
           label="Maior objetivo do momento"
@@ -236,6 +315,7 @@ export function StepAbout() {
             onChange={(e) => update({ goal: e.target.value })}
           />
         </Field>
+        )}
 
         <Field
           id="f-techLevel"
