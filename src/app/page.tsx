@@ -1,69 +1,158 @@
-import Image from "next/image";
+import { ShieldCheck, ListChecks, KeyRound } from "lucide-react";
+import Link from "next/link";
+import { Faq } from "@/components/landing/faq";
+import { HeroTree } from "@/components/landing/hero-tree";
+import { SiteFooter } from "@/components/site-footer";
+import { SiteHeader } from "@/components/site-header";
+import { Button } from "@/components/ui/button";
+import { brand } from "@/config/brand";
+import { catalogStats, mcps } from "@/data/catalog";
+
+const STEPS = [
+  {
+    title: "Descreva seu produto",
+    text: "Nome, o problema que resolve, para quem é e em que fase está. Se ainda não tem projeto, bastam três respostas.",
+  },
+  {
+    title: "Escolha o que entra no kit",
+    text: "A IA sugere agentes, skills e MCPs do catálogo e explica por que cada um serve para o seu SaaS. Você monta o carrinho.",
+  },
+  {
+    title: "Baixe e solte na pasta",
+    text: "O zip vem personalizado, com LEIA-ME no seu nível técnico e um prompt de ativação para colar no Claude Code.",
+  },
+];
 
 export default function Home() {
+  const verifiedAt = new Intl.DateTimeFormat("pt-BR", { dateStyle: "long", timeZone: "UTC" }).format(
+    new Date(`${mcps[0]?.verifiedAt ?? "2026-11-12"}T12:00:00Z`),
+  );
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert h-5 w-[100px]"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the{" "}
-            <code className="rounded bg-black/[.06] px-1.5 py-0.5 font-mono text-[0.9em] dark:bg-white/[.08]">
-              page.tsx
-            </code>{" "}
-            file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert h-[14px] w-4"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={14}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <>
+      <SiteHeader landing />
+      <main id="conteudo">
+        {/* Hero */}
+        <section className="wrap grid items-center gap-14 pb-20 pt-14 md:pt-20 lg:grid-cols-[1.05fr_0.95fr] lg:gap-16 lg:pb-28">
+          <div>
+            <h1 className="font-display text-[clamp(3.1rem,8.4vw,6.4rem)] font-bold leading-[0.92] tracking-[-0.045em] [font-stretch:88%] text-balance">
+              {brand.tagline}
+            </h1>
+            <p className="mt-7 max-w-[34rem] text-pretty text-lg leading-relaxed text-ink-2 sm:text-xl">
+              {brand.heroSubtitle}
+            </p>
+            <div className="mt-9 flex flex-wrap items-center gap-3">
+              <Button asChild size="lg">
+                <Link href="/montar">{brand.copy.heroCta}</Link>
+              </Button>
+              <Button asChild size="lg" variant="ghost">
+                <a href="#como-funciona">Ver como funciona</a>
+              </Button>
+            </div>
+            <p className="mt-6 text-sm text-ink-3">Sem cadastro. Seu kit é montado no navegador e baixado em um .zip.</p>
+          </div>
+          <HeroTree />
+        </section>
+
+        {/* Como funciona */}
+        <section id="como-funciona" className="scroll-mt-20 border-t border-line bg-surface">
+          <div className="wrap py-20 lg:py-28">
+            <h2 className="max-w-2xl font-display text-4xl font-semibold leading-[1.05] tracking-[-0.03em] sm:text-5xl">
+              Três passos entre a ideia e o Claude Code trabalhando
+            </h2>
+            <ol className="mt-14 grid gap-10 md:grid-cols-3 md:gap-8">
+              {STEPS.map((s, i) => (
+                <li key={s.title} className="relative border-t-2 border-ink pt-6">
+                  <span className="font-display text-6xl font-bold leading-none tracking-tighter text-ink [font-stretch:80%]">
+                    {i + 1}
+                  </span>
+                  <h3 className="mt-5 text-lg font-semibold">{s.title}</h3>
+                  <p className="mt-2 text-pretty leading-relaxed text-ink-2">{s.text}</p>
+                </li>
+              ))}
+            </ol>
+          </div>
+        </section>
+
+        {/* Dois modos */}
+        <section className="wrap grid gap-12 py-20 lg:grid-cols-2 lg:gap-20 lg:py-28">
+          <div>
+            <h2 className="font-display text-4xl font-semibold leading-[1.05] tracking-[-0.03em] sm:text-5xl">
+              Com projeto ou do zero
+            </h2>
+            <p className="mt-5 max-w-md text-pretty text-lg leading-relaxed text-ink-2">
+              O kit muda conforme o seu ponto de partida. Nos dois casos, o Claude pede sua aprovação antes de mexer em
+              qualquer coisa.
+            </p>
+          </div>
+          <div className="grid gap-4">
+            <article className="rounded-3xl border border-line p-7">
+              <h3 className="font-display text-2xl font-semibold tracking-tight">Já tenho um projeto</h3>
+              <p className="mt-3 text-pretty leading-relaxed text-ink-2">
+                O Claude lê seu código, escreve um brief curto, adapta agentes e skills aos seus caminhos e comandos e
+                propõe um plano na ordem certa.
+              </p>
+            </article>
+            <article className="rounded-3xl border border-ink bg-ink p-7 text-bg">
+              <h3 className="font-display text-2xl font-semibold tracking-tight">Vou começar do zero</h3>
+              <p className="mt-3 text-pretty leading-relaxed opacity-80">
+                O kit liga o Modo Descoberta: antes de escrever uma linha, o Claude entrevista você sobre cliente, MVP,
+                preço, stack e prazo, em blocos curtos, e só constrói depois do brief aprovado.
+              </p>
+            </article>
+          </div>
+        </section>
+
+        {/* Honestidade */}
+        <section className="border-y border-line bg-surface">
+          <div className="wrap py-16">
+            <ul className="grid gap-10 md:grid-cols-3">
+              <li>
+                <ListChecks className="size-6 text-ink" aria-hidden />
+                <h3 className="mt-4 font-semibold">Catálogo curado</h3>
+                <p className="mt-2 text-pretty text-ink-2">
+                  {catalogStats.agents} agentes, {catalogStats.skills} skills e {catalogStats.mcps} MCPs. A IA escolhe
+                  entre eles; não inventa itens nem comandos.
+                </p>
+              </li>
+              <li>
+                <ShieldCheck className="size-6 text-ink" aria-hidden />
+                <h3 className="mt-4 font-semibold">MCPs verificados</h3>
+                <p className="mt-2 text-pretty text-ink-2">
+                  Conferidos na documentação oficial em {verifiedAt}: {mcps.map((m) => m.name).join(", ")}.
+                </p>
+              </li>
+              <li>
+                <KeyRound className="size-6 text-ink" aria-hidden />
+                <h3 className="mt-4 font-semibold">Nenhum segredo no zip</h3>
+                <p className="mt-2 text-pretty text-ink-2">
+                  Credenciais só como variáveis de ambiente, com o .env.example vazio e instruções para preencher no seu
+                  computador.
+                </p>
+              </li>
+            </ul>
+          </div>
+        </section>
+
+        {/* FAQ */}
+        <section id="perguntas" className="wrap scroll-mt-20 grid gap-10 py-20 lg:grid-cols-[0.8fr_1.2fr] lg:gap-20 lg:py-28">
+          <h2 className="font-display text-4xl font-semibold leading-[1.05] tracking-[-0.03em] sm:text-5xl">
+            Perguntas frequentes
+          </h2>
+          <Faq />
+        </section>
+
+        <section className="wrap pb-24">
+          <div className="flex flex-col items-start justify-between gap-6 rounded-[2rem] bg-brand px-8 py-10 text-brand-ink sm:flex-row sm:items-center sm:px-12">
+            <p className="max-w-lg font-display text-3xl font-semibold leading-tight tracking-tight sm:text-4xl">
+              Seu SaaS merece um time que já chega sabendo o que fazer.
+            </p>
+            <Button asChild size="lg" variant="ink">
+              <Link href="/montar">{brand.copy.heroCta}</Link>
+            </Button>
+          </div>
+        </section>
       </main>
-    </div>
+      <SiteFooter />
+    </>
   );
 }

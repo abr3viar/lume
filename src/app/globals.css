@@ -1,26 +1,221 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Tokens do Lume. A cor da marca vive em --brand: troque aqui e tudo acompanha.
+ * Regras de contraste:
+ *  - Tema claro: amarelo nunca como cor de texto sobre branco. Só como fundo (com texto preto),
+ *    linhas, ícones grandes e halos de foco.
+ *  - Tema escuro: amarelo pode ser texto (contraste ~13:1 sobre #0A0A0A).
+ */
+:root,
+[data-theme="light"] {
+  color-scheme: light;
+  --brand: #ffc700;
+  --brand-hover: #ffd23a;
+  --brand-ink: #111111; /* texto sobre o amarelo, nos dois temas */
+  --brand-soft: #fff6d1; /* fundo de selos sutis */
+  --brand-text: #111111; /* "texto de marca": no claro vira tinta */
+
+  --bg: #ffffff;
+  --surface: #fafaf7;
+  --surface-2: #f3f3ee;
+  --ink: #111111;
+  --ink-2: #4d4d48; /* 8.3:1 sobre branco */
+  --ink-3: #6b6b65; /* 5.4:1 sobre branco; uso só em textos de apoio */
+  --line: #e8e8e2;
+  --line-strong: #d6d6ce;
+
+  --ok: #1d6b3a;
+  --warn-bg: #fff6d1;
+  --warn-ink: #5c4400;
+  --danger: #a3261d;
+  --danger-bg: #fdecea;
+
+  --focus-outline: #111111;
+  --focus-halo: #ffc700;
+  --shadow-sm: 0 1px 2px rgb(17 17 17 / 0.06);
+  --shadow-lg: 0 24px 60px -24px rgb(17 17 17 / 0.25), 0 2px 6px rgb(17 17 17 / 0.06);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --brand: #ffc700;
+  --brand-hover: #ffd54d;
+  --brand-ink: #0a0a0a;
+  --brand-soft: #2a2306;
+  --brand-text: #ffc700;
+
+  --bg: #0a0a0a;
+  --surface: #141414;
+  --surface-2: #1c1c1c;
+  --ink: #f5f5f0;
+  --ink-2: #b9b9b2; /* 9.9:1 sobre #0A0A0A */
+  --ink-3: #8f8f88; /* 6.0:1 sobre #0A0A0A */
+  --line: #262626;
+  --line-strong: #333333;
+
+  --ok: #6fd394;
+  --warn-bg: #2a2306;
+  --warn-ink: #ffe28a;
+  --danger: #ff8f85;
+  --danger-bg: #2b1210;
+
+  --focus-outline: #ffc700;
+  --focus-halo: transparent;
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.5);
+  --shadow-lg: 0 24px 60px -24px rgb(0 0 0 / 0.8), 0 0 0 1px rgb(255 255 255 / 0.04);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-brand-ink: var(--brand-ink);
+  --color-brand-soft: var(--brand-soft);
+  --color-brand-text: var(--brand-text);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-ok: var(--ok);
+  --color-warn-bg: var(--warn-bg);
+  --color-warn-ink: var(--warn-ink);
+  --color-danger: var(--danger);
+  --color-danger-bg: var(--danger-bg);
+
+  --font-sans: var(--font-body);
+  --font-display: var(--font-display);
+  --font-mono: var(--font-code);
+
+  --shadow-soft: var(--shadow-sm);
+  --shadow-lift: var(--shadow-lg);
+
+  --ease-out-soft: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  html {
+    background: var(--bg);
+    color: var(--ink);
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+  }
+  body {
+    font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+    font-feature-settings: "ss01", "cv11";
+    min-height: 100dvh;
+  }
+  ::selection {
+    background: var(--brand);
+    color: var(--brand-ink);
+  }
+  /* Foco visível e com contraste nos dois temas. */
+  :focus-visible {
+    outline: 2px solid var(--focus-outline);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 5px var(--focus-halo);
+    border-radius: 6px;
+  }
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+  button:disabled {
+    cursor: not-allowed;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .font-display {
+    font-family: var(--font-display), ui-sans-serif, system-ui, sans-serif;
+    font-optical-sizing: auto;
+  }
+  .wrap {
+    width: 100%;
+    max-width: 76rem;
+    margin-inline: auto;
+    padding-inline: clamp(1.25rem, 4vw, 2.5rem);
+  }
+  .hairline {
+    border-color: var(--line);
+  }
+  /* Código renderizado pelo Shiki com dois temas. */
+  .shiki,
+  .shiki span {
+    color: var(--shiki-light);
+    background-color: transparent !important;
+  }
+  [data-theme="dark"] .shiki,
+  [data-theme="dark"] .shiki span {
+    color: var(--shiki-dark);
+  }
+  .shiki {
+    font-family: var(--font-code), ui-monospace, monospace;
+    font-size: 0.8125rem;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+}
+
+@keyframes sheet-in {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+@keyframes pop-in {
+  from {
+    transform: scale(0.97);
+    opacity: 0;
+  }
+}
+@keyframes fade-up {
+  from {
+    transform: translateY(8px);
+    opacity: 0;
+  }
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+@keyframes expand {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+@keyframes collapse {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+.skeleton {
+  background: linear-gradient(90deg, var(--surface-2) 25%, var(--surface) 50%, var(--surface-2) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.6s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
