@@ -98,8 +98,10 @@ ${DATA_ONLY_RULE}
 
 Regras:
 - Mantenha a estrutura, as seções e a qualidade do template. Não encurte: o resultado deve ter pelo menos o mesmo nível de detalhe.
-- Adapte exemplos, passos e critérios ao nicho, ao público (B2B/B2C), ao estágio e ao objetivo informados. Pode acrescentar até 3 passos ou regras específicos do SaaS.
-- Preserve todas as regras de segurança, privacidade e limites do template.
+- Adapte exemplos, passos e critérios ao nicho, ao público (B2B/B2C), ao estágio, ao objetivo e à stack informados. Pode acrescentar até 3 passos ou regras específicos do SaaS.
+- Os exemplos devem usar o vocabulário do SaaS (ex.: em uma agenda de clínicas, "consultas", "pacientes", "faltas"), não exemplos genéricos.
+- A "description" diz QUANDO usar com uma situação concreta deste SaaS; nada de "ajuda a melhorar" ou frases que serviriam para qualquer produto.
+- Preserve todas as regras de segurança, privacidade e limites do template, e mantenha intacta a seção "Verificação antes de concluir" (rodar testes, lint e typecheck e mostrar o resultado).
 - Não invente fatos sobre o SaaS (números, clientes, integrações, stack). Quando precisar de algo não informado, escreva que deve ser confirmado com o usuário ou descoberto no código.
 - Não inclua chaves, tokens, senhas, URLs privadas ou dados pessoais.
 - Escreva para o Claude Code ler, em tom direto e imperativo.`;
