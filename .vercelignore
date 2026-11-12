@@ -1,0 +1,6 @@
+.env*.local
+.env
+test-results
+playwright-report
+coverage
+Lume.cmd
