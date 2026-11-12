@@ -18,6 +18,8 @@ export type ItemMeta = {
   name: string;
   category: string;
   description: string;
+  /** Uma linha: quando usar (agente), para que serve (skill/MCP). */
+  whenToUse: string;
   effort: "fácil" | "médio" | "avançado";
   appliesTo: "B2B" | "B2C" | "ambos";
   mcp?: Mcp;
@@ -26,14 +28,14 @@ export type ItemMeta = {
 export function itemMeta(kind: ItemKind, id: string): ItemMeta | null {
   if (kind === "agent") {
     const a = agentById.get(id);
-    return a ? { kind, id, name: a.name, category: a.category, description: a.description, effort: a.effort, appliesTo: a.appliesTo } : null;
+    return a ? { kind, id, name: a.name, category: a.category, description: a.description, whenToUse: a.whenToUse, effort: a.effort, appliesTo: a.appliesTo } : null;
   }
   if (kind === "skill") {
     const s = skillById.get(id);
-    return s ? { kind, id, name: s.name, category: s.category, description: s.summary, effort: s.effort, appliesTo: s.appliesTo } : null;
+    return s ? { kind, id, name: s.name, category: s.category, description: s.summary, whenToUse: s.summary, effort: s.effort, appliesTo: s.appliesTo } : null;
   }
   const m = mcpById.get(id);
   return m
-    ? { kind, id, name: m.name, category: m.category, description: m.purpose, effort: m.effort, appliesTo: m.appliesTo, mcp: m }
+    ? { kind, id, name: m.name, category: m.category, description: m.purpose, whenToUse: m.purpose, effort: m.effort, appliesTo: m.appliesTo, mcp: m }
     : null;
 }

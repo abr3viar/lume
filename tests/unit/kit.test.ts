@@ -38,6 +38,7 @@ describe("estrutura do kit", () => {
       [
         // Stack Next.js: proteções e hooks de formatação e typecheck.
         ".claude/settings.json",
+        "lume-kit.json",
         ".claude/hooks/formatar.mjs",
         ".claude/hooks/verificar-tipos.mjs",
         ".claude/agents/arquiteto-produto.md",

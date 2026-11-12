@@ -10,13 +10,14 @@ import { checkCart } from "@/lib/kit/checks";
 import { itemMeta, KIND_LABEL, RISK_META } from "@/lib/item-meta";
 import { saasInfoSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
-import { cartCount, formToInput, useKit, useUi } from "@/store/kit-store";
+import { cartCount, formToInput, itemOrigins, useKit, useUi } from "@/store/kit-store";
 import { PackageExplorer } from "./package-explorer";
 import { ModeBadge } from "./mode-badge";
 import { useStepNext } from "./step-actions";
 import { StepFooter, StepHeader } from "./step-header";
 
 const KINDS: ItemKind[] = ["agent", "skill", "mcp"];
+const ORIGIN_LABEL = { ia: "IA", recomendador: "Recomendador", catalogo: "Catálogo" } as const;
 
 export function StepReview() {
   const mode = useKit((s) => s.mode)!;
@@ -25,8 +26,12 @@ export function StepReview() {
   const remove = useKit((s) => s.remove);
   const setStep = useKit((s) => s.setStep);
   const setUi = useUi((s) => s.set);
-  const ai = useKit((s) => s.recsSource) !== "local";
+  const recs = useKit((s) => s.recs);
+  const recsSource = useKit((s) => s.recsSource);
+  const aiProvider = useKit((s) => s.aiProvider);
+  const ai = recsSource !== "local";
   const total = cartCount(cart);
+  const origins = useMemo(() => itemOrigins(cart, recs, recsSource), [cart, recs, recsSource]);
 
   const saas = useMemo(() => saasInfoSchema.safeParse(formToInput(form)), [form]);
   const checks = useMemo(
@@ -36,8 +41,10 @@ export function StepReview() {
   const preview = useMemo(() => {
     if (!saas.success) return null;
     const input = baseKitInput(mode, saas.data, { agents: cart.agent, skills: cart.skill, mcps: cart.mcp });
+    input.origins = origins;
+    input.aiProvider = aiProvider;
     return { files: buildKitFiles(input), root: kitRoot(saas.data) };
-  }, [saas, mode, cart]);
+  }, [saas, mode, cart, origins, aiProvider]);
 
   const go = () => {
     if (total === 0 || !saas.success) return;
@@ -78,10 +85,25 @@ export function StepReview() {
                         {cart[k].map((id) => {
                           const m = itemMeta(k, id);
                           if (!m) return null;
+                          const rec = recs[k].find((r) => r.id === id);
+                          const origin = origins[`${k}:${id}`];
+                          // Uma linha: por quê (sugestão) ou quando usar (catálogo).
+                          const why = rec?.reason ?? m.whenToUse;
                           return (
-                            <li key={id} className="flex items-center gap-2 py-2 pl-4 pr-2 text-sm">
-                              <span className="flex-1 truncate">{m.name}</span>
-                              {m.mcp && <span className="text-xs text-ink-3">{RISK_META[m.mcp.riskLevel].label}</span>}
+                            <li key={id} className="flex items-start gap-2 py-2.5 pl-4 pr-2 text-sm">
+                              <div className="min-w-0 flex-1">
+                                <p className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                                  <span className="font-medium">{m.name}</span>
+                                  {rec?.impact === "alto" && <span className="rounded-full bg-brand px-1.5 text-[0.68rem] font-medium text-brand-ink">Essencial</span>}
+                                  <span className="rounded-full border border-line px-1.5 text-[0.68rem] text-ink-3" title="Origem do item">
+                                    {ORIGIN_LABEL[origin]}
+                                  </span>
+                                  {m.mcp && <span className="text-[0.68rem] text-ink-3">{RISK_META[m.mcp.riskLevel].label}</span>}
+                                </p>
+                                <p className="mt-0.5 line-clamp-1 text-xs text-ink-3" title={why}>
+                                  {why}
+                                </p>
+                              </div>
                               <Button variant="ghost" size="icon-sm" aria-label={`Remover ${m.name}`} onClick={() => remove(k, id)}>
                                 <X />
                               </Button>

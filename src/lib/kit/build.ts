@@ -1,4 +1,5 @@
 import { brand } from "@/config/brand";
+import { CATALOG_VERSION, LUME_VERSION } from "@/config/version";
 import type { CatalogAgent, Mcp, Skill } from "@/data/catalog";
 import { agentById, mcpById, skillById } from "@/data/catalog";
 import { agentDescription } from "@/data/catalog/triggers";
@@ -32,8 +33,37 @@ export type KitInput = {
   context?: ContextPersonalization | null;
   /** True quando o kit passou pela personalização com IA (mesmo que algum item tenha caído no fallback). */
   personalizationAttempted?: boolean;
+  /** De onde veio cada item (chave "agent:id"): sugestão da IA, do recomendador local ou escolha no catálogo. */
+  origins?: Record<string, ItemOrigin>;
+  /** Qual IA trabalhou: Claude Code local, API ou nenhuma. */
+  aiProvider?: "claude-code" | "api" | "local" | null;
   generatedAt: Date;
 };
+
+export type ItemOrigin = "ia" | "recomendador" | "catalogo";
+
+export const METADATA_FILE = "lume-kit.json";
+
+/** Metadados do kit: versões, data, modo e origem de cada item. Sem dados do usuário além do nome do SaaS. */
+export function kitMetadata(input: KitInput): string {
+  const origin = (kind: string, id: string) => input.origins?.[`${kind}:${id}`] ?? "catalogo";
+  const meta = {
+    gerador: brand.name,
+    versaoLume: LUME_VERSION,
+    catalogo: { versao: CATALOG_VERSION, agentes: agentById.size, skills: skillById.size, mcps: mcpById.size },
+    geradoEm: input.generatedAt.toISOString(),
+    tipoDeKit: input.mode,
+    ia: input.aiProvider ?? "local",
+    projeto: input.saas.name,
+    itens: [
+      ...input.agents.map((a) => ({ tipo: "agente", id: a.item.id, origem: origin("agent", a.item.id), personalizado: a.personalized })),
+      ...input.skills.map((x) => ({ tipo: "skill", id: x.item.id, origem: origin("skill", x.item.id), personalizado: x.personalized })),
+      ...input.mcps.map((m) => ({ tipo: "mcp", id: m.id, origem: origin("mcp", m.id), verificadoEm: m.verifiedAt })),
+    ],
+  };
+  return `${JSON.stringify(meta, null, 2)}
+`;
+}
 
 export const DISCOVERY_MARK = "MODO DESCOBERTA ATIVO";
 export const FIX_MARK = "MODO CONSERTO ATIVO";
@@ -526,7 +556,7 @@ Olá! Vamos começar o ${saas.name} do zero, juntos.
 
 1. Leia o CLAUDE.md, o BRIEFING.md, os agentes em .claude/agents/ e as skills em .claude/skills/${hasMcps ? " e o .mcp.json" : ""}.
 2. O MODO DESCOBERTA está ativo. Antes de criar qualquer arquivo de projeto, instalar dependências ou rodar comandos, me entreviste sobre o SaaS seguindo as regras do CLAUDE.md: blocos de no máximo 4 perguntas, confirmando o que já está no BRIEFING.md.
-3. Ao terminar, use a skill brief-do-projeto (se estiver instalada) para consolidar tudo em um Brief do Projeto, atualize o BRIEFING.md e o CLAUDE.md e me peça aprovação.
+3. Ao terminar, ${input.skills.some((s) => s.item.id === "brief-do-projeto") ? "use a skill brief-do-projeto para consolidar" : "consolide"} tudo em um Brief do Projeto, atualize o BRIEFING.md e o CLAUDE.md e me peça aprovação.
 4. Com o brief aprovado, proponha a arquitetura e a stack com prós e contras${input.agents.some((a) => a.item.id === "arquiteto-produto") ? " (use o agente arquiteto-produto)" : ""}, e um plano de construção por etapas dizendo qual agente ou skill entra em cada etapa.
 5. Espere minha aprovação do plano. Com a arquitetura aprovada, preencha no CLAUDE.md as seções "Comandos do projeto", "Convenções de código" e "Decisões de arquitetura".
 6. Execute uma etapa por vez. Ao fim de cada uma, mostre o resultado dos testes, do lint e do typecheck e peça confirmação antes da próxima.
@@ -816,6 +846,7 @@ export function buildKitFiles(input: KitInput): KitFile[] {
   }
   if (input.mode === "zero") core.push({ path: "BRIEFING.md", content: briefingMd(input) });
   if (isTaskMode(input.mode)) core.push({ path: "TAREFA.md", content: tarefaMd(input) });
+  core.push({ path: METADATA_FILE, content: kitMetadata(input) });
 
   const allPaths = [...core.map((f) => f.path), "LEIA-ME.md"];
   const tree = `${root}/\n${renderTreeText(buildTree(allPaths))}`;

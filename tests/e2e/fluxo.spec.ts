@@ -80,6 +80,9 @@ test("modo projeto existente: do formulário ao zip", async ({ page }) => {
   // Revisão: verificações e explorador.
   await page.getByRole("button", { name: "Revisar o kit" }).click();
   await expect(page.getByRole("heading", { name: "Revise o seu kit" })).toBeVisible();
+  // Origem: todos os 5 itens estavam entre as sugestões da IA (mock), inclusive o adicionado pela paleta.
+  await expect(page.getByTitle("Origem do item").first()).toHaveText("IA");
+  await expect(page.getByTitle("Origem do item").filter({ hasText: /^IA$/ })).toHaveCount(5);
   await expect(page.getByText("1 variável de ambiente para preencher")).toBeVisible();
   await expect(page.getByText("Suporte ao cliente e Base de conhecimento").or(page.getByText("Verificações"))).toBeVisible();
   await page.getByRole("treeitem").filter({ hasText: ".mcp.json" }).getByRole("button").click();
@@ -100,6 +103,7 @@ test("modo projeto existente: do formulário ao zip", async ({ page }) => {
       `${root}CLAUDE.md`,
       `${root}LEIA-ME.md`,
       `${root}PROMPT-DE-ATIVACAO.md`,
+      `${root}lume-kit.json`,
       `${root}.mcp.json`,
       `${root}.env.example`,
       `${root}.claude/agents/suporte-cliente.md`,

@@ -113,7 +113,14 @@ export async function withRetry<T>(fn: () => Promise<T>, signal: AbortSignal, at
 const nextFrame = () =>
   new Promise<void>((r) => (typeof requestAnimationFrame === "function" ? requestAnimationFrame(() => r()) : r()));
 
-type Params = { mode: Mode; saas: SaasInfo; ids: { agents: string[]; skills: string[]; mcps: string[] }; ai: boolean };
+type Params = {
+  mode: Mode;
+  saas: SaasInfo;
+  ids: { agents: string[]; skills: string[]; mcps: string[] };
+  ai: boolean;
+  origins?: KitInput["origins"];
+  aiProvider?: KitInput["aiProvider"];
+};
 
 /**
  * Uma geração de kit com estado. Personaliza item a item (uma chamada curta por item),
@@ -131,6 +138,8 @@ export class KitGeneration {
     private onProgress: (p: GenProgress) => void,
   ) {
     this.input = baseKitInput(params.mode, params.saas, params.ids);
+    this.input.origins = params.origins;
+    this.input.aiProvider = params.aiProvider;
     const verb = params.ai ? ["Personalizando o agente", "Adaptando a skill"] : ["Preparando o agente", "Preparando a skill"];
     this.tasks = [
       ...this.input.agents.map((a) => ({ key: `agent:${a.item.id}`, label: `${verb[0]} ${a.item.name}`, state: "pendente" as const })),

@@ -10,7 +10,7 @@ import { brand } from "@/config/brand";
 import { extractPromptBlock, KitGeneration, type GenerateResult, type GenProgress } from "@/lib/client/generate";
 import { saasInfoSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
-import { formToInput, useKit } from "@/store/kit-store";
+import { formToInput, itemOrigins, useKit } from "@/store/kit-store";
 import { ModeBadge } from "./mode-badge";
 import { StepHeader } from "./step-header";
 
@@ -146,7 +146,14 @@ export function StepGenerate() {
     const c = new AbortController();
     ctrl.current = c;
     const g = new KitGeneration(
-      { mode, saas: parsed.data, ids: { agents: cart.agent, skills: cart.skill, mcps: cart.mcp }, ai },
+      {
+        mode,
+        saas: parsed.data,
+        ids: { agents: cart.agent, skills: cart.skill, mcps: cart.mcp },
+        ai,
+        origins: itemOrigins(cart, useKit.getState().recs, useKit.getState().recsSource),
+        aiProvider: useKit.getState().aiProvider,
+      },
       (p) => !c.signal.aborted && setProgress(p),
     );
     gen.current = g;

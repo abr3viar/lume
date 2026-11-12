@@ -161,6 +161,25 @@ export function cartCount(cart: Cart) {
   return cart.agent.length + cart.skill.length + cart.mcp.length;
 }
 
+/**
+ * Origem de cada item do carrinho: sugerido pela IA, pelo recomendador local
+ * ou escolhido direto no catálogo (paleta, kit pronto).
+ */
+export function itemOrigins(
+  cart: Cart,
+  recs: Recs,
+  recsSource: "ia" | "local" | null,
+): Record<string, "ia" | "recomendador" | "catalogo"> {
+  const out: Record<string, "ia" | "recomendador" | "catalogo"> = {};
+  for (const kind of ["agent", "skill", "mcp"] as const) {
+    for (const id of cart[kind]) {
+      const suggested = recs[kind].some((r) => r.id === id);
+      out[`${kind}:${id}`] = suggested ? (recsSource === "local" ? "recomendador" : "ia") : "catalogo";
+    }
+  }
+  return out;
+}
+
 /** "7 agentes, 4 skills e 2 MCPs" (omite tipos vazios). */
 export function cartSummary(cart: Cart) {
   const parts = [
