@@ -21,6 +21,22 @@ export const brand = {
     success: "Tudo aceso! Seu kit está pronto.",
     genericError: "Faltou luz por aqui. Tente de novo em instantes.",
   },
+  /** Exemplos clicáveis que preenchem o campo principal do assistente. */
+  examples: {
+    saas: [
+      { label: "Agenda para clínicas", text: "Agenda online para clínicas pequenas, com confirmação de consultas e lembretes por WhatsApp para reduzir faltas." },
+      { label: "Cursos online", text: "Plataforma para professores autônomos venderem cursos gravados, com área do aluno, certificados e pagamento por Pix." },
+      { label: "Estoque de restaurante", text: "Controle de estoque e pedidos para pequenos restaurantes, com alerta de ingredientes acabando e lista de compras automática." },
+    ],
+    erro: [
+      { label: "Erro ao salvar", text: "Ao salvar o formulário de cadastro, a página dá erro 500 e os dados não são gravados no banco." },
+      { label: "Login no celular", text: "O login com Google funciona no computador, mas no celular volta para a tela inicial sem entrar na conta." },
+    ],
+    ajuste: [
+      { label: "Texto e cor do botão", text: "Trocar o texto do botão principal da home para 'Começar grátis' e usar a cor da marca no botão." },
+      { label: "Campo novo", text: "Adicionar o campo telefone (opcional) no formulário de cadastro e salvar no banco junto com o nome." },
+    ],
+  },
   /** Como cada modo de IA aparece na interface. */
   aiModes: {
     "claude-code": {

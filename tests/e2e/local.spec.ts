@@ -16,7 +16,7 @@ for (const mode of ["existente", "zero"] as const) {
     const name = mode === "zero" ? "Treino em Casa" : "Agenda Clínica";
     await page.getByLabel("Nome do produto").fill(name);
     await page
-      .getByLabel("Descrição curta")
+      .getByLabel("O que o produto faz e para quem")
       .fill(mode === "zero" ? "App de treinos curtos em casa com progresso semanal." : "Agenda online para clínicas com lembretes por WhatsApp.");
     await page.getByRole("radio", { name: mode === "zero" ? /^B2C vende para pessoas/ : /^B2B vende para empresas/ }).click();
     if (mode === "existente") {

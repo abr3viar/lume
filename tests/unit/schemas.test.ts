@@ -9,12 +9,10 @@ describe("saasInfoSchemaFor", () => {
     expect(res.success).toBe(true);
   });
 
-  it("no modo projeto existente exige nicho, problema, estágio e nível técnico, com mensagens em português", () => {
-    const res = saasInfoSchemaFor("existente").safeParse(minimal);
-    expect(res.success).toBe(false);
-    const paths = res.error!.issues.map((i) => i.path[0]);
-    expect(paths).toEqual(expect.arrayContaining(["niche", "problem", "stage", "techLevel"]));
-    expect(res.error!.issues.find((i) => i.path[0] === "stage")!.message).toBe("Escolha o estágio do seu SaaS.");
+  it("no modo projeto existente, nicho, problema, estágio e nível técnico são opcionais", () => {
+    expect(saasInfoSchemaFor("existente").safeParse(minimal).success).toBe(true);
+    const res = saasInfoSchemaFor("existente").safeParse({ ...minimal, description: "curta" });
+    expect(res.error!.issues[0].message).toBe("A descrição precisa ter pelo menos 10 caracteres.");
   });
 
   it("exige o modelo de negócio com mensagem amigável", () => {

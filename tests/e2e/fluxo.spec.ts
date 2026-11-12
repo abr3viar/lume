@@ -34,7 +34,7 @@ test("modo projeto existente: do formulário ao zip", async ({ page }) => {
 
   await page.getByLabel("Nome do produto").fill("Agenda Clínica");
   const desc = "Agenda online para clínicas pequenas, com lembretes por WhatsApp.";
-  await page.getByLabel("Descrição curta").fill(desc);
+  await page.getByLabel("O que o produto faz e para quem").fill(desc);
   await page.getByRole("radio", { name: /^B2B vende para empresas/ }).click();
   await page.getByRole("button", { name: "Saúde" }).click();
   await page.getByLabel("Problema que resolve").fill("Clínicas perdem consultas por faltas e confirmam tudo por telefone.");
@@ -127,9 +127,10 @@ test("modo projeto existente: do formulário ao zip", async ({ page }) => {
 test("modo do zero: kit pronto, Modo Descoberta e briefing", async ({ page }) => {
   await page.goto("/montar");
   await page.getByRole("radio", { name: /Vou começar do zero/ }).click();
+  await page.getByTestId("mais-detalhes").locator("summary").click();
   await expect(page.getByText("Pode deixar em branco, o Claude vai perguntar depois.").first()).toBeVisible();
   await page.getByLabel("Nome do produto").fill("Treino em Casa");
-  await page.getByLabel("Descrição curta").fill("App de treinos curtos em casa com acompanhamento de progresso.");
+  await page.getByLabel("O que o produto faz e para quem").fill("App de treinos curtos em casa com acompanhamento de progresso.");
   await page.getByRole("radio", { name: /^B2C vende para pessoas/ }).click();
   await page.getByRole("button", { name: "Ver recomendações" }).click();
 
@@ -175,7 +176,7 @@ test("erro de IA mostra mensagem amigável e tentar de novo", async ({ page }) =
   await page.goto("/montar");
   await page.getByRole("radio", { name: /Vou começar do zero/ }).click();
   await page.getByLabel("Nome do produto").fill("Teste Erro");
-  await page.getByLabel("Descrição curta").fill("Produto para testar o estado de erro.");
+  await page.getByLabel("O que o produto faz e para quem").fill("Produto para testar o estado de erro da IA nas recomendações.");
   await page.getByRole("radio", { name: /^B2B vende para empresas/ }).click();
   await page.getByRole("button", { name: "Ver recomendações" }).click();
   await expect(page.getByText("Faltou luz por aqui")).toBeVisible();

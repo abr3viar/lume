@@ -92,8 +92,7 @@ export type SaasInfoInput = z.input<typeof saasInfoSchema>;
 
 /**
  * Obrigatórios por modo:
- * - existente: nome, descrição, modelo, nicho, problema, estágio e nível técnico;
- * - zero: nome, descrição e modelo;
+ * - existente e zero: nome, descrição e modelo (o resto é opcional e melhora as sugestões);
  * - erro/ajuste: nome do projeto e a tarefa (o resto é opcional).
  */
 export function saasInfoSchemaFor(mode: Mode) {
@@ -111,13 +110,7 @@ export function saasInfoSchemaFor(mode: Mode) {
     if (v.description.length < 10)
       ctx.addIssue({ code: "custom", path: ["description"], message: "A descrição precisa ter pelo menos 10 caracteres." });
     if (!v.model) ctx.addIssue({ code: "custom", path: ["model"], message: "Escolha o modelo do seu SaaS." });
-    if (mode === "zero") return;
-    if (v.niche.length < 2) ctx.addIssue({ code: "custom", path: ["niche"], message: "Conte qual é o nicho." });
-    if (v.problem.length < 10)
-      ctx.addIssue({ code: "custom", path: ["problem"], message: "Descreva o problema em pelo menos 10 caracteres." });
-    if (!v.stage) ctx.addIssue({ code: "custom", path: ["stage"], message: "Escolha o estágio do seu SaaS." });
-    if (!v.techLevel)
-      ctx.addIssue({ code: "custom", path: ["techLevel"], message: "Escolha o nível técnico de quem vai usar o kit." });
+
   });
 }
 

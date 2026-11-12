@@ -5,7 +5,7 @@ test("adicionar essenciais coloca no kit só os itens marcados como essenciais",
   await page.goto("/montar");
   await page.getByRole("radio", { name: /Vou começar do zero/ }).click();
   await page.getByLabel("Nome do produto").fill("Treino em Casa");
-  await page.getByLabel("Descrição curta").fill("App de treinos curtos em casa com progresso semanal.");
+  await page.getByLabel("O que o produto faz e para quem").fill("App de treinos curtos em casa com progresso semanal.");
   await page.getByRole("radio", { name: /^B2C vende para pessoas/ }).click();
   await page.getByRole("button", { name: "Ver recomendações" }).click();
 

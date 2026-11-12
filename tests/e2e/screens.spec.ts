@@ -35,7 +35,7 @@ for (const theme of ["light", "dark"] as const) {
       await page.getByRole("button", { name: "Ver recomendações" }).click();
       await shot("03-sobre-erros");
       await page.getByLabel("Nome do produto").fill("Agenda Clínica");
-      await page.getByLabel("Descrição curta").fill("Agenda online para clínicas pequenas, com lembretes por WhatsApp.");
+      await page.getByLabel("O que o produto faz e para quem").fill("Agenda online para clínicas pequenas, com lembretes por WhatsApp.");
       await page.getByRole("radio", { name: /^B2B vende para empresas/ }).click();
       await page.getByRole("button", { name: "Saúde" }).click();
       await page.getByLabel("Problema que resolve").fill("Clínicas perdem consultas por faltas.");

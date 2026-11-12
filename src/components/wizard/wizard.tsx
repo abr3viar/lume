@@ -77,8 +77,9 @@ function Progress() {
             })}
           </ol>
         </div>
-        <p className="mt-1 text-center text-xs font-medium sm:hidden" aria-hidden>
-          {label(STEPS[step - 1])}
+        <p className="mt-1.5 text-center text-xs text-ink-3" aria-live="polite" data-testid="etapa-atual">
+          Etapa {step} de {STEPS.length}
+          <span className="font-medium text-ink sm:hidden">: {label(STEPS[step - 1])}</span>
         </p>
       </div>
     </nav>
