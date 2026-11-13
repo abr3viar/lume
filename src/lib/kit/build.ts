@@ -18,6 +18,21 @@ import { redactSecrets } from "./secrets";
 import { hooksFor } from "./hooks";
 import { detectStacks } from "./stacks";
 import { buildTree, renderTreeText } from "./tree";
+import { LUME_SKILL_DESCRIPTION, LUME_SKILL_ID, lumeSkillBody, PROGRESS_FILE, progressTemplate } from "./lume-skill";
+import {
+  codexAgentToml,
+  codexMcpToml,
+  cursorRule,
+  geminiCommand,
+  geminiSettings,
+  geminiSkillCommand,
+  grokMcpToml,
+  mcpReference,
+  retarget,
+  targetOf,
+  type KitTarget,
+  type TargetProfile,
+} from "./targets";
 
 export type KitFile = { path: string; content: string };
 
@@ -37,6 +52,8 @@ export type KitInput = {
   origins?: Record<string, ItemOrigin>;
   /** Qual IA trabalhou: Claude Code local, API ou nenhuma. */
   aiProvider?: "claude-code" | "api" | "local" | null;
+  /** Ferramenta de IA onde o kit vai rodar. Padrão: Claude Code. */
+  target?: KitTarget;
   generatedAt: Date;
 };
 
@@ -53,6 +70,7 @@ export function kitMetadata(input: KitInput): string {
     catalogo: { versao: CATALOG_VERSION, agentes: agentById.size, skills: skillById.size, mcps: mcpById.size },
     geradoEm: input.generatedAt.toISOString(),
     tipoDeKit: input.mode,
+    ferramenta: targetOf(input.target).id,
     ia: input.aiProvider ?? "local",
     projeto: input.saas.name,
     itens: [
@@ -134,7 +152,7 @@ function usageFor(input: KitInput, id: string) {
   return input.context?.usage.find((u) => u.id === id);
 }
 
-function envVars(mcps: Mcp[]) {
+export function envVars(mcps: Mcp[]) {
   const seen = new Map<string, { name: string; description: string; whereToGet: string; mcp: string }>();
   for (const m of mcps) for (const e of m.requiredEnvVars) if (!seen.has(e.name)) seen.set(e.name, { ...e, mcp: m.name });
   return [...seen.values()];
@@ -328,6 +346,11 @@ export function claudeMd(input: KitInput): string {
   if (ctx) {
     parts.push(`### Em resumo\n${ctx.summary}\n\n**Focos agora:**\n${ctx.focus.map((f) => `- ${f}`).join("\n")}\n`);
   }
+
+  parts.push(`## Método de trabalho
+
+Antes de qualquer tarefa, siga a skill \`${LUME_SKILL_ID}\` (em \`.claude/skills/${LUME_SKILL_ID}/\`): entender o pedido, investigar o código, planejar, executar em passos pequenos, verificar e relatar com provas. O histórico de cada tarefa fica no \`${PROGRESS_FILE}\`, na raiz do projeto: leia ao começar e atualize ao terminar.
+`);
 
   if (input.agents.length) {
     parts.push(`## Agentes instalados (\`.claude/agents/\`)
@@ -825,6 +848,91 @@ Bom trabalho, e que o ${saas.name} acenda.
 
 // ─────────────────────────── montagem completa ───────────────────────────
 
+/** Arquivos da skill "metodo-lume" (vai em todo kit) dentro de uma pasta de skills. */
+function lumeSkillFiles(dir: string, input: KitInput, t: TargetProfile): KitFile[] {
+  const fm = frontmatter({ name: LUME_SKILL_ID, description: yamlString(LUME_SKILL_DESCRIPTION) });
+  const body = lumeSkillBody(input.mode, {
+    instructions: t.instructions,
+    agents: t.agentsDir,
+    skills: t.skillsDir,
+    mcp: input.mcps.length ? t.mcp.path : undefined,
+  });
+  return [
+    { path: `${dir}${LUME_SKILL_ID}/SKILL.md`, content: `${fm}\n${body}` },
+    { path: `${dir}${LUME_SKILL_ID}/modelo-progresso.md`, content: progressTemplate() },
+  ];
+}
+
+/** Agentes, skills e MCPs no formato de cada ferramenta (fora o Claude Code, que usa os geradores acima). */
+function toolFiles(input: KitInput, t: TargetProfile): KitFile[] {
+  const out: KitFile[] = [];
+  const plainSkill = (s: KitSkill, dir: string) =>
+    skillFiles(s).map((f) => ({ ...f, path: f.path.replace(".claude/skills/", dir) }));
+  const roleFile = (a: KitAgent): KitFile => ({
+    path: `agentes/${a.item.id}.md`,
+    content: `# Papel: ${a.item.name}\n\n**Quando usar:** ${a.description.replace(/\s+/g, " ").trim()}\n${
+      a.item.permissionMode === "plan" || a.item.access === "leitura"
+        ? "\n**Somente leitura:** analise e recomende, sem editar arquivos.\n"
+        : ""
+    }\n${a.prompt.trim()}\n`,
+  });
+  switch (t.id) {
+    case "codex":
+      for (const a of input.agents)
+        out.push({ path: `${t.agentsDir}${a.item.id}.toml`, content: codexAgentToml(a.item.id, a.description, a.prompt) });
+      for (const sk of input.skills) out.push(...plainSkill(sk, t.skillsDir));
+      out.push(...lumeSkillFiles(t.skillsDir, input, t));
+      if (input.mcps.length) out.push({ path: t.mcp.path, content: codexMcpToml(input.mcps) });
+      break;
+    case "gemini":
+      for (const a of input.agents)
+        out.push({
+          path: `${t.agentsDir}${a.item.id}.toml`,
+          content: geminiCommand(a.item.whenToUse, `${a.prompt.trim()}\n\n## Pedido\n{{args}}`),
+        });
+      for (const sk of input.skills) {
+        out.push(...plainSkill(sk, t.skillsDir));
+        out.push({ path: `.gemini/commands/skill/${sk.item.id}.toml`, content: geminiSkillCommand(sk.item.id, sk.description) });
+      }
+      out.push(...lumeSkillFiles(t.skillsDir, input, t));
+      out.push({
+        path: `.gemini/commands/skill/${LUME_SKILL_ID}.toml`,
+        content: geminiSkillCommand(LUME_SKILL_ID, LUME_SKILL_DESCRIPTION),
+      });
+      if (input.mcps.length) out.push({ path: t.mcp.path, content: geminiSettings(input.mcps) });
+      break;
+    case "cursor":
+      for (const a of input.agents)
+        out.push({
+          path: `${t.agentsDir}agente-${a.item.id}.mdc`,
+          content: cursorRule(agentDescription(a.description, a.item.id), a.prompt),
+        });
+      for (const sk of input.skills) {
+        out.push(...plainSkill(sk, t.skillsDir));
+        out.push({
+          path: `${t.agentsDir}skill-${sk.item.id}.mdc`,
+          content: cursorRule(sk.description, `Leia e siga o passo a passo em \`skills/${sk.item.id}/SKILL.md\`.`),
+        });
+      }
+      out.push(...lumeSkillFiles(t.skillsDir, input, t));
+      out.push({
+        path: `${t.agentsDir}${LUME_SKILL_ID}.mdc`,
+        content: cursorRule(LUME_SKILL_DESCRIPTION, `Em toda tarefa, siga o método em \`skills/${LUME_SKILL_ID}/SKILL.md\`.`, true),
+      });
+      if (input.mcps.length) out.push({ path: t.mcp.path, content: mcpReference(input.mcps) });
+      break;
+    case "grok":
+    case "outra":
+      for (const a of input.agents) out.push(roleFile(a));
+      for (const sk of input.skills) out.push(...plainSkill(sk, t.skillsDir));
+      out.push(...lumeSkillFiles(t.skillsDir, input, t));
+      if (input.mcps.length)
+        out.push({ path: t.mcp.path, content: t.id === "grok" ? grokMcpToml(input.mcps) : mcpReference(input.mcps) });
+      break;
+  }
+  return out;
+}
+
 /** Gera todos os arquivos do kit (caminhos relativos à pasta raiz `<slug>-kit/`). */
 export function buildKitFiles(input: KitInput): KitFile[] {
   const notPersonalized = [
@@ -832,32 +940,139 @@ export function buildKitFiles(input: KitInput): KitFile[] {
     ...input.skills.filter((s) => !s.personalized).map((s) => s.item.name),
   ];
   const root = kitRoot(input.saas);
+  const t = targetOf(input.target);
+  const claude = t.id === "claude-code";
+  const doc = (text: string) => retarget(text, t);
 
-  const core: KitFile[] = [
-    ...input.agents.map(agentFile),
-    ...input.skills.flatMap(skillFiles),
-    ...hooksFor(detectStacks(input.saas)).files,
-    { path: "CLAUDE.md", content: claudeMd(input) },
-    { path: "PROMPT-DE-ATIVACAO.md", content: activationPrompt(input) },
-  ];
+  const core: KitFile[] = claude
+    ? [
+        ...input.agents.map(agentFile),
+        ...input.skills.flatMap(skillFiles),
+        ...lumeSkillFiles(".claude/skills/", input, t),
+        ...hooksFor(detectStacks(input.saas)).files,
+      ]
+    : toolFiles(input, t);
+  const instructions = claude
+    ? claudeMd(input)
+    : doc(claudeMd(input)).replace(`${t.skillsDir.replace(/\/$/, "")}/${LUME_SKILL_ID}/`, `${t.skillsDir}${LUME_SKILL_ID}/`);
+  core.push({ path: t.instructions, content: instructions });
+  core.push({ path: "PROMPT-DE-ATIVACAO.md", content: doc(activationPrompt(input)) });
   if (input.mcps.length) {
-    core.push({ path: ".mcp.json", content: mcpJson(input.mcps) });
-    core.push({ path: ".env.example", content: envExample(input.mcps) });
+    if (claude) core.push({ path: ".mcp.json", content: mcpJson(input.mcps) });
+    core.push({ path: ".env.example", content: doc(envExample(input.mcps)) });
   }
-  if (input.mode === "zero") core.push({ path: "BRIEFING.md", content: briefingMd(input) });
-  if (isTaskMode(input.mode)) core.push({ path: "TAREFA.md", content: tarefaMd(input) });
+  if (input.mode === "zero") core.push({ path: "BRIEFING.md", content: doc(briefingMd(input)) });
+  if (isTaskMode(input.mode)) core.push({ path: "TAREFA.md", content: doc(tarefaMd(input)) });
   core.push({ path: METADATA_FILE, content: kitMetadata(input) });
 
   const allPaths = [...core.map((f) => f.path), "LEIA-ME.md"];
   const tree = `${root}/\n${renderTreeText(buildTree(allPaths))}`;
   // Itens "não personalizados" só fazem sentido quando houve tentativa de personalização.
-  core.push({
-    path: "LEIA-ME.md",
-    content: readmeMd(input, tree, input.personalizationAttempted ? notPersonalized : []),
-  });
+  const np = input.personalizationAttempted ? notPersonalized : [];
+  core.push({ path: "LEIA-ME.md", content: claude ? readmeMd(input, tree, np) : targetReadme(input, t, tree, np) });
 
   return core.map((f) => {
     if (!isSafeZipPath(f.path)) throw new Error(`Caminho inseguro no kit: ${f.path}`);
     return { path: f.path, content: redactSecrets(f.content) };
   });
+}
+
+// ─────────────────────────── LEIA-ME para outras ferramentas ───────────────────────────
+
+const MCP_SETUP: Record<Exclude<KitTarget, "claude-code">, string> = {
+  codex:
+    "O `.codex/config.toml` traz os MCPs. O Codex não lê o `.env` sozinho: as variáveis precisam estar no ambiente do terminal antes de rodar `codex` (veja abaixo). Servidores com login OAuth pedem autenticação na primeira vez; siga a documentação do Codex.",
+  gemini:
+    "O `.gemini/settings.json` traz os MCPs. O Gemini CLI troca `${VAR}` pelo valor da variável de ambiente; carregue o `.env` no terminal antes de rodar `gemini`. Servidores com OAuth pedem login na primeira vez.",
+  cursor:
+    "O `mcp-servidores.json` é uma referência: o formato do arquivo de MCP do Cursor não pôde ser conferido na documentação oficial na data deste kit. Adicione cada servidor pelas configurações de MCP do Cursor, copiando a URL ou o comando daqui.",
+  grok: "O `.grok/config.toml` traz os MCPs no escopo do projeto. O Grok Build troca `${VAR}` pelo valor da variável de ambiente na hora de carregar.",
+  outra:
+    "O `mcp-servidores.json` traz os servidores no formato `mcpServers`, o mais comum. Copie para a configuração de MCP da sua ferramenta; os `${VAR}` vêm do seu ambiente.",
+};
+
+const LOAD_ENV = [
+  "Para carregar o `.env` no terminal antes de abrir a ferramenta:",
+  "",
+  "```bash",
+  "set -a; source .env; set +a",
+  "```",
+  "",
+  "No PowerShell:",
+  "",
+  "```powershell",
+  "Get-Content .env | Where-Object { $_ -match '^[A-Z_]+=' } | ForEach-Object { $k, $v = $_ -split '=', 2; Set-Item \"env:$k\" $v }",
+  "```",
+].join("\n");
+
+export function targetReadme(input: KitInput, t: TargetProfile, tree: string, notPersonalized: string[]): string {
+  const { saas, mode } = input;
+  const vars = envVars(input.mcps);
+  const first = input.agents[0]?.item;
+  const s: string[] = [];
+  s.push(`# ${saas.name}: seu kit para o ${t.label}
+
+_${brand.generatedBy} em ${formatDate(input.generatedAt)}, no formato do ${t.label}._
+
+A IA é o motor; o kit é o método. Ele leva o contexto do ${saas.name}, ${input.agents.length} agentes, ${input.skills.length + 1} skills (incluindo o método Lume) e ${input.mcps.length} MCPs, já no formato que o ${t.label} lê.
+`);
+  if (notPersonalized.length)
+    s.push(`> [!NOTE]
+> Estes itens foram incluídos com o modelo base, que já funciona: ${notPersonalized.join(", ")}. Você pode pedir para a IA adaptá-los ao projeto.
+`);
+  const lines = [
+    `- **${t.instructions}**: o contexto do projeto e as regras de trabalho. É o primeiro arquivo que a IA lê.`,
+    `- **${t.skillsDir}${LUME_SKILL_ID}/**: o método Lume. Faz a IA entender, planejar, executar em passos pequenos, verificar e registrar o progresso no \`${PROGRESS_FILE}\`.`,
+    ...(first ? [`- **${t.agentsDir}**: os agentes. ${t.agentHint(first.id)}`] : []),
+    ...(input.skills.length ? [`- **${t.skillsDir}**: as skills. ${t.skillHint}`] : []),
+    ...(input.mcps.length
+      ? [`- **${t.mcp.path}**: os MCPs, que conectam a IA a outras ferramentas.`, "- **.env.example**: as variáveis que os MCPs precisam, sem valores."]
+      : []),
+    "- **PROMPT-DE-ATIVACAO.md**: a primeira mensagem para colar na IA.",
+    ...(mode === "zero" ? ["- **BRIEFING.md**: o formulário da descoberta."] : []),
+    ...(isTaskMode(mode) ? ['- **TAREFA.md**: a tarefa e o que significa "pronto".'] : []),
+  ];
+  s.push(`## 1. O que tem no pacote
+
+\`\`\`text
+${tree}
+\`\`\`
+
+${lines.join("\n")}
+
+## 2. Instalar
+
+1. ${t.install} Guia oficial: ${t.docsUrl}
+2. Descompacte o zip e copie **o conteúdo** da pasta \`${kitRoot(saas)}/\` para a raiz do seu projeto. Se já existir um \`${t.instructions}\`, junte os dois em vez de substituir.
+3. Abra a ferramenta na pasta do projeto, cole o conteúdo do \`PROMPT-DE-ATIVACAO.md\` e acompanhe.
+`);
+  if (input.mcps.length) {
+    const varList = vars.length
+      ? `\nVariáveis de ambiente (preencha só no \`.env\`, que fica fora do git):\n\n${vars
+          .map((v) => `- \`${v.name}\`: ${v.description} Onde obter: ${v.whereToGet}`)
+          .join("\n")}\n\n${LOAD_ENV}\n`
+      : "";
+    s.push(`## 3. Conectar os MCPs
+
+${MCP_SETUP[t.id as Exclude<KitTarget, "claude-code">]}
+
+| MCP | Para que serve | Documentação |
+|---|---|---|
+${input.mcps.map((m) => `| ${m.name} | ${cell(m.purpose)} | ${m.docsUrl} |`).join("\n")}
+${varList}`);
+  }
+  s.push(`## ${input.mcps.length ? 4 : 3}. Primeiros 10 minutos
+
+1. Cole o prompt de ativação e deixe a IA ler o projeto.
+2. Peça algo pequeno para testar o método: "Resuma o projeto e me diga os comandos de teste e build".
+3. Confira se ela respondeu no formato do método Lume (feito, arquivos, verificação, pendências, próximo passo) e criou o \`${PROGRESS_FILE}\`.
+${first ? `4. Teste um agente: ${t.agentHint(first.id)}\n` : ""}
+## Segurança
+
+- Nenhum segredo vai no kit. Chaves ficam só no \`.env\`, fora do git.
+- Nunca cole chaves ou senhas no chat da IA.
+${t.supportsHooks ? "" : `- As proteções automáticas (bloquear leitura do \`.env\`, comandos destrutivos, formatação) são do Claude Code e não vêm neste formato. As regras equivalentes estão escritas no \`${t.instructions}\`.\n`}
+Bom trabalho, e que o ${saas.name} acenda.
+`);
+  return s.join("\n");
 }

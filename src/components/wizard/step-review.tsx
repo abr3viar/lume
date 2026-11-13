@@ -12,6 +12,7 @@ import { saasInfoSchema } from "@/lib/schemas";
 import { cn } from "@/lib/utils";
 import { cartCount, formToInput, itemOrigins, useKit, useUi } from "@/store/kit-store";
 import { PackageExplorer } from "./package-explorer";
+import { TargetPicker } from "./target-picker";
 import { ModeBadge } from "./mode-badge";
 import { useStepNext } from "./step-actions";
 import { StepFooter, StepHeader } from "./step-header";
@@ -29,6 +30,7 @@ export function StepReview() {
   const recs = useKit((s) => s.recs);
   const recsSource = useKit((s) => s.recsSource);
   const aiProvider = useKit((s) => s.aiProvider);
+  const target = useKit((s) => s.target);
   const ai = recsSource !== "local";
   const total = cartCount(cart);
   const origins = useMemo(() => itemOrigins(cart, recs, recsSource), [cart, recs, recsSource]);
@@ -43,8 +45,9 @@ export function StepReview() {
     const input = baseKitInput(mode, saas.data, { agents: cart.agent, skills: cart.skill, mcps: cart.mcp });
     input.origins = origins;
     input.aiProvider = aiProvider;
+    input.target = target;
     return { files: buildKitFiles(input), root: kitRoot(saas.data) };
-  }, [saas, mode, cart, origins, aiProvider]);
+  }, [saas, mode, cart, origins, aiProvider, target]);
 
   const go = () => {
     if (total === 0 || !saas.success) return;
@@ -57,13 +60,14 @@ export function StepReview() {
       <StepHeader title="Revise o seu kit">
         {ai
           ? "Confira o que vai no pacote e veja cada arquivo antes de gerar. Na geração, a IA adapta cada agente e skill ao seu SaaS."
-          : "Confira o que vai no pacote e veja cada arquivo antes de gerar. Depois, o prompt de ativação pede ao Claude Code para adaptar o kit ao seu projeto."}
+          : "Confira o que vai no pacote e veja cada arquivo antes de gerar. Depois, o prompt de ativação pede à sua IA para adaptar o kit ao seu projeto."}
       </StepHeader>
 
       <ModeBadge className="-mt-4 mb-10 max-w-3xl" />
 
       <div className="grid gap-10 lg:grid-cols-[22rem_1fr]">
         <div className="grid content-start gap-8">
+          <TargetPicker />
           <section aria-labelledby="itens-title">
             <h2 id="itens-title" className="mb-3 flex items-baseline justify-between font-semibold">
               Itens <span className="text-sm font-normal tabular-nums text-ink-3">{total}</span>

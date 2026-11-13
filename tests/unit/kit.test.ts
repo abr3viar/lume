@@ -50,6 +50,8 @@ describe("estrutura do kit", () => {
         ".claude/skills/checklist-lgpd/checklist.md",
         ".claude/skills/escrever-prd/SKILL.md",
         ".claude/skills/escrever-prd/template-prd.md",
+        ".claude/skills/metodo-lume/SKILL.md",
+        ".claude/skills/metodo-lume/modelo-progresso.md",
         ".env.example",
         ".mcp.json",
         "CLAUDE.md",

@@ -153,6 +153,7 @@ export function StepGenerate() {
         ai,
         origins: itemOrigins(cart, useKit.getState().recs, useKit.getState().recsSource),
         aiProvider: useKit.getState().aiProvider,
+        target: useKit.getState().target,
       },
       (p) => !c.signal.aborted && setProgress(p),
     );

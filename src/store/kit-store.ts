@@ -2,6 +2,7 @@
 
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
+import type { KitTarget } from "@/lib/kit/targets";
 import type { ItemKind } from "@/data/catalog/schema";
 import type { RecommendedItem } from "@/lib/ai/recommend-core";
 import type { BusinessModel, Mode, SaasInfoInput, SaasStage, TechLevel } from "@/lib/schemas";
@@ -74,6 +75,9 @@ type KitState = {
   /** Quem gerou as sugestões: Claude Code local, API ou o recomendador do Lume. */
   aiProvider: "claude-code" | "api" | "local" | null;
   cart: Cart;
+  /** Ferramenta de IA onde o kit vai rodar (Claude Code, Codex, Gemini CLI, Cursor, Grok ou outra). */
+  target: KitTarget;
+  setTarget: (t: KitTarget) => void;
   setStep: (s: Step) => void;
   setMode: (m: Mode) => void;
   setForm: (patch: Partial<SaasForm>) => void;
@@ -98,6 +102,8 @@ export const useKit = create<KitState>()(
       recsSource: null,
       aiProvider: null,
       cart: emptyCart,
+      target: "claude-code",
+      setTarget: (t) => set({ target: t }),
       setStep: (s) => set((st) => ({ step: s, maxStep: (Math.max(st.maxStep, s) as Step) })),
       setMode: (m) => set({ mode: m }),
       setForm: (patch) => set((st) => ({ form: { ...st.form, ...patch } })),
@@ -152,6 +158,7 @@ export const useKit = create<KitState>()(
         recsSource: s.recsSource,
         aiProvider: s.aiProvider,
         cart: s.cart,
+        target: s.target,
       }),
     },
   ),
