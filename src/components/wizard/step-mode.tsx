@@ -105,7 +105,7 @@ export function StepMode() {
               >
                 <Icon className="size-6" />
               </span>
-              <span className="mt-6 font-display text-2xl font-semibold tracking-[-0.02em] sm:text-[1.7rem]">{title}</span>
+              <span className="mt-6 font-display text-2xl font-medium sm:text-[1.7rem]">{title}</span>
               <span className="mt-2 text-ink-2">{text}</span>
               <ul className="mt-5 space-y-2 text-sm text-ink-2">
                 {points.map((p) => (

@@ -61,8 +61,8 @@ export function SiteHeader({ landing = false }: { landing?: boolean }) {
   const set = useUi((s) => s.set);
   const mod = useModKey();
   return (
-    <header className="sticky top-0 z-40 border-b border-line/70 bg-bg/80 backdrop-blur-xl supports-[backdrop-filter]:bg-bg/70">
-      <div className="wrap flex h-16 items-center gap-3">
+    <header className="sticky top-3 z-40 px-3 sm:top-4">
+      <div className="mx-auto flex h-14 w-full max-w-[72rem] items-center gap-2 rounded-full border border-line/80 bg-bg/75 pl-4 pr-2 shadow-[0_16px_40px_-24px_rgb(0_0_0/0.35),inset_0_1px_0_rgb(255_255_255/0.06)] backdrop-blur-xl supports-[backdrop-filter]:bg-bg/60 sm:gap-3 sm:pl-5">
         <Link href="/" aria-label={`${brand.name}, página inicial`} className="mr-auto rounded-md">
           <Logo />
         </Link>
@@ -94,7 +94,7 @@ export function SiteHeader({ landing = false }: { landing?: boolean }) {
         <ThemeToggle />
         <CartButton />
         {landing && (
-          <Button asChild size="sm" className="hidden md:inline-flex">
+          <Button asChild size="sm" variant="ink" className="sheen hidden h-9 px-4 md:inline-flex">
             <Link href="/montar">{brand.copy.heroCta}</Link>
           </Button>
         )}

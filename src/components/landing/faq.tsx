@@ -5,20 +5,32 @@ import { Accordion } from "radix-ui";
 
 const FAQ: { q: string; a: React.ReactNode }[] = [
   {
+    q: "Funciona com outras IAs além do Claude?",
+    a: "Sim. Na revisão você escolhe entre Claude Code, Codex, Gemini CLI, Cursor, Grok Build ou outra IA que leia o AGENTS.md. O conteúdo é o mesmo; o Lume muda onde cada arquivo mora e o formato, conferido na documentação oficial de cada ferramenta.",
+  },
+  {
+    q: "Serve para um site comum, não só SaaS?",
+    a: "Serve. Escolha “Site” ao contar sobre o projeto: landing page, site institucional, portfólio, blog ou loja. As sugestões passam a priorizar copy, SEO, performance, design e deploy.",
+  },
+  {
+    q: "Como funcionam os sites de referência?",
+    a: "Cole até três sites que você acha bonitos. O Lume lê a página pública, tira as fontes, as cores, a estrutura e o código, e coloca no kit para o agente de design se inspirar, sem copiar textos, logos ou a marca de ninguém.",
+  },
+  {
     q: "O que exatamente eu baixo?",
-    a: "Um .zip com uma pasta pronta para a raiz do seu projeto: agentes em .claude/agents, skills em .claude/skills, o .mcp.json com os servidores MCP, um CLAUDE.md com o contexto do seu SaaS, um LEIA-ME passo a passo e o prompt de ativação para colar no Claude Code.",
+    a: "Um .zip com uma pasta pronta para a raiz do seu projeto, no formato da IA que você escolher: o arquivo de contexto (CLAUDE.md, AGENTS.md ou GEMINI.md), os agentes, as skills, os MCPs, o método Lume, um LEIA-ME passo a passo e o prompt de ativação para colar na sua IA.",
   },
   {
     q: "Preciso saber programar?",
-    a: "Não. Ao montar o kit você escolhe o seu nível técnico, e o LEIA-ME é escrito nesse nível, explicando até como abrir o terminal. Você só precisa ter o Claude Code instalado.",
+    a: "Não. Ao montar o kit você escolhe o seu nível técnico, e o LEIA-ME é escrito nesse nível, explicando até como abrir o terminal. Você só precisa ter a sua ferramenta de IA instalada.",
   },
   {
     q: "E se eu ainda não tiver um projeto?",
-    a: "Escolha “Vou começar do zero”. O kit vem com o Modo Descoberta: o Claude entrevista você sobre o SaaS em blocos curtos de perguntas, monta um briefing, pede sua aprovação e só então começa a construir.",
+    a: "Escolha “Vou começar do zero”. O kit vem com o Modo Descoberta: a IA entrevista você sobre o projeto em blocos curtos de perguntas, monta um briefing, pede sua aprovação e só então começa a construir.",
   },
   {
     q: "Serve para consertar um erro ou fazer uma mudança pequena?",
-    a: "Sim. Escolha “Consertar um erro” ou “Fazer uma atualização rápida” e descreva a tarefa. O kit vem enxuto, com um TAREFA.md e regras para o Claude reproduzir antes de mexer, manter o escopo fechado, pedir aprovação e deixar um teste quando fizer sentido.",
+    a: "Sim. Escolha “Consertar um erro” ou “Fazer uma atualização rápida” e descreva a tarefa. O kit vem enxuto, com um TAREFA.md e regras para a IA reproduzir antes de mexer, manter o escopo fechado, pedir aprovação e deixar um teste quando fizer sentido.",
   },
   {
     q: "Os MCPs são confiáveis?",

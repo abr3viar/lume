@@ -1,15 +1,9 @@
 import type { Metadata, Viewport } from "next";
-import { Bricolage_Grotesque, Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { brand } from "@/config/brand";
 import { AppProviders } from "@/components/app-providers";
 import "./globals.css";
 
-const display = Bricolage_Grotesque({
-  subsets: ["latin"],
-  variable: "--font-display",
-  axes: ["opsz", "wdth"],
-  display: "swap",
-});
 const body = Geist({ subsets: ["latin"], variable: "--font-body", display: "swap" });
 const code = Geist_Mono({ subsets: ["latin"], variable: "--font-code", display: "swap" });
 
@@ -44,7 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       lang="pt-BR"
       data-theme="light"
       suppressHydrationWarning
-      className={`${display.variable} ${body.variable} ${code.variable}`}
+      className={`${body.variable} ${code.variable}`}
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />

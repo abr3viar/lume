@@ -11,14 +11,14 @@ export function StepHeader({
   className?: string;
 }) {
   return (
-    <div className={cn("mb-10 max-w-3xl", className)}>
+    <div className={cn("step-in mb-10 max-w-3xl", className)}>
       <h1
         tabIndex={-1}
-        className="font-display text-4xl font-semibold leading-[1.05] tracking-[-0.03em] outline-none sm:text-5xl"
+        className="font-display text-4xl font-medium leading-[1.04] outline-none sm:text-[3.25rem]"
       >
         {title}
       </h1>
-      {children && <div className="mt-4 text-pretty text-lg leading-relaxed text-ink-2">{children}</div>}
+      {children && <div className="mt-4 text-pretty text-lg leading-relaxed text-ink-3">{children}</div>}
     </div>
   );
 }

@@ -60,7 +60,7 @@ for (const mode of ["existente", "zero"] as const) {
     const root = download.suggestedFilename().replace(/\.zip$/, "/");
     const files = Object.keys(zip.files).filter((f) => !zip.files[f].dir);
     expect(files.filter((f) => f.startsWith(`${root}.claude/agents/`))).toHaveLength(3);
-    expect(files.filter((f) => f.endsWith("/SKILL.md"))).toHaveLength(2);
+    expect(files.filter((f) => f.endsWith("/SKILL.md"))).toHaveLength(3); // 2 escolhidas + metodo-lume
     expect(files).toContain(`${root}.mcp.json`);
     const claude = await zip.file(`${root}CLAUDE.md`)!.async("string");
     expect(claude.includes("MODO DESCOBERTA ATIVO")).toBe(mode === "zero");
