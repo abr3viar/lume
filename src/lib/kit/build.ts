@@ -15,6 +15,7 @@ import {
 import { isSafeZipPath, slugify } from "@/lib/slug";
 import { frontmatter, yamlString } from "./frontmatter";
 import { redactSecrets } from "./secrets";
+import { connectionsSection, CONNECT_STEP } from "./connections";
 import { hooksFor } from "./hooks";
 import { detectStacks } from "./stacks";
 import { buildTree, renderTreeText } from "./tree";
@@ -396,6 +397,9 @@ ${input.mcps
 Antes de usar um MCP que escreve dados, explique ao usuário o que vai fazer e peça confirmação.
 `);
   }
+
+  const conn = connectionsSection(saas, input.mcps, ".mcp.json");
+  if (conn) parts.push(conn);
 
   parts.push(projectSections(input));
 
@@ -956,7 +960,11 @@ export function buildKitFiles(input: KitInput): KitFile[] {
     ? claudeMd(input)
     : doc(claudeMd(input)).replace(`${t.skillsDir.replace(/\/$/, "")}/${LUME_SKILL_ID}/`, `${t.skillsDir}${LUME_SKILL_ID}/`);
   core.push({ path: t.instructions, content: instructions });
-  core.push({ path: "PROMPT-DE-ATIVACAO.md", content: doc(activationPrompt(input)) });
+  // Com ferramentas para conectar, a IA pergunta antes de mexer no projeto (linha logo antes do "Fale comigo").
+  const prompt = connectionsSection(input.saas, input.mcps, ".mcp.json")
+    ? activationPrompt(input).replace(/\n+(Fale comigo)/, (_m, rest: string) => `\n\n${CONNECT_STEP}\n\n${rest}`)
+    : activationPrompt(input);
+  core.push({ path: "PROMPT-DE-ATIVACAO.md", content: doc(prompt) });
   if (input.mcps.length) {
     if (claude) core.push({ path: ".mcp.json", content: mcpJson(input.mcps) });
     core.push({ path: ".env.example", content: doc(envExample(input.mcps)) });
