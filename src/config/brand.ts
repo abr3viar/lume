@@ -5,11 +5,11 @@
  */
 export const brand = {
   name: "Lume",
-  tagline: "Acenda o seu SaaS.",
+  tagline: "Acenda o seu projeto.",
   heroSubtitle:
-    "Descreva seu produto e receba um kit sob medida de agentes, skills e MCPs para o Claude Code. Baixe, solte na pasta e comece.",
+    "Descreva seu produto e receba um kit sob medida de agentes, skills e MCPs para a IA que você usa: Claude Code, Codex, Gemini, Cursor ou Grok. Baixe, solte na pasta e comece.",
   description:
-    "Monte um kit sob medida de agentes, skills e MCPs para o Claude Code a partir da descrição do seu SaaS.",
+    "Monte um kit sob medida de agentes, skills e MCPs para Claude Code, Codex, Gemini, Cursor e Grok a partir da descrição do seu SaaS ou site.",
   footer:
     "Lume. Agentes, skills e MCPs são pontos de partida; revise tudo antes de usar em produção.",
   generatedBy: "Kit gerado pelo Lume",
@@ -28,6 +28,11 @@ export const brand = {
       { label: "Cursos online", text: "Plataforma para professores autônomos venderem cursos gravados, com área do aluno, certificados e pagamento por Pix." },
       { label: "Estoque de restaurante", text: "Controle de estoque e pedidos para pequenos restaurantes, com alerta de ingredientes acabando e lista de compras automática." },
     ],
+    site: [
+      { label: "Site de restaurante", text: "Site de uma pizzaria de bairro com cardápio, horários, mapa e botão para pedir pelo WhatsApp, pensado para o celular." },
+      { label: "Portfólio de fotógrafa", text: "Portfólio de uma fotógrafa de casamentos com galerias por evento, depoimentos de clientes e formulário de orçamento." },
+      { label: "Landing de lançamento", text: "Landing page para lançar um curso de confeitaria, com vídeo, módulos, depoimentos, preço e lista de espera por e-mail." },
+    ],
     erro: [
       { label: "Erro ao salvar", text: "Ao salvar o formulário de cadastro, a página dá erro 500 e os dados não são gravados no banco." },
       { label: "Login no celular", text: "O login com Google funciona no computador, mas no celular volta para a tela inicial sem entrar na conta." },
@@ -45,11 +50,11 @@ export const brand = {
     },
     api: {
       label: "IA pela API da Anthropic",
-      detail: "A IA escolhe e personaliza cada item para o seu SaaS.",
+      detail: "A IA escolhe e personaliza cada item para o seu projeto.",
     },
     local: {
       label: "Sem IA: grátis, sem conta",
-      detail: "O recomendador do Lume escolhe pelo que você contou. A adaptação fina acontece no Claude Code, pelo prompt de ativação.",
+      detail: "O recomendador do Lume escolhe pelo que você contou. A adaptação fina acontece na sua IA, pelo prompt de ativação.",
     },
   },
 } as const;

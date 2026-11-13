@@ -59,7 +59,7 @@ export function StepReview() {
     <div className="wrap py-12 lg:py-16">
       <StepHeader title="Revise o seu kit">
         {ai
-          ? "Confira o que vai no pacote e veja cada arquivo antes de gerar. Na geração, a IA adapta cada agente e skill ao seu SaaS."
+          ? "Confira o que vai no pacote e veja cada arquivo antes de gerar. Na geração, a IA adapta cada agente e skill ao seu projeto."
           : "Confira o que vai no pacote e veja cada arquivo antes de gerar. Depois, o prompt de ativação pede à sua IA para adaptar o kit ao seu projeto."}
       </StepHeader>
 
@@ -166,7 +166,7 @@ export function StepReview() {
             <PackageExplorer files={preview.files} root={preview.root} />
           ) : (
             <p className="rounded-2xl border border-line p-6 text-sm text-ink-2">
-              Complete os dados do SaaS para ver a prévia.
+              Complete os dados do projeto para ver a prévia.
               <Button variant="outline" size="sm" className="ml-3" onClick={() => setStep(2)}>
                 Completar
               </Button>

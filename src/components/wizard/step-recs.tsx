@@ -107,7 +107,7 @@ function Presets() {
         <h2 id="presets-title" className="font-display text-2xl font-semibold tracking-tight">
           Kits prontos
         </h2>
-        <p className="hidden text-sm text-ink-3 sm:block">Um clique adiciona o conjunto, ajustado ao seu SaaS.</p>
+        <p className="hidden text-sm text-ink-3 sm:block">Um clique adiciona o conjunto, ajustado ao seu projeto.</p>
       </div>
       <div className="-mx-[clamp(1.25rem,4vw,2.5rem)] flex snap-x gap-3 overflow-x-auto px-[clamp(1.25rem,4vw,2.5rem)] pb-2 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0">
         {presets
@@ -321,7 +321,7 @@ export function StepRecs() {
 
   return (
     <div className="wrap py-12 lg:py-16">
-      <StepHeader title={`Sugestões para o ${name.trim() || "seu SaaS"}`}>
+      <StepHeader title={`Sugestões para o ${name.trim() || "seu projeto"}`}>
         {isTaskMode(mode)
           ? `${source === "local" ? "Escolhemos do catálogo o que mais combina com a tarefa que você descreveu." : "A IA escolheu do catálogo o que mais combina com a tarefa que você descreveu."} Para ${mode === "erro" ? "consertar um erro" : "uma mudança curta"}, menos é mais: fique só com o essencial.`
           : source === "local"

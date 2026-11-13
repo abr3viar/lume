@@ -219,7 +219,7 @@ export function StepGenerate() {
           ? "Não conseguimos montar o zip. Seus itens continuam no carrinho."
           : ai
             ? "Cada item é personalizado separadamente. Se algum não der certo, ele entra com o modelo base."
-            : "Montando agentes, skills e arquivos de contexto com o seu SaaS. O Claude Code termina de adaptar tudo ao seu projeto pelo prompt de ativação."}
+            : "Montando agentes, skills e arquivos de contexto com o seu projeto. A sua IA termina de adaptar tudo ao seu projeto pelo prompt de ativação."}
       </StepHeader>
 
       {!failed && <ModeBadge className="-mt-4 mb-8 max-w-3xl" />}

@@ -5,11 +5,12 @@ import { createJSONStorage, persist } from "zustand/middleware";
 import type { KitTarget } from "@/lib/kit/targets";
 import type { ItemKind } from "@/data/catalog/schema";
 import type { RecommendedItem } from "@/lib/ai/recommend-core";
-import type { BusinessModel, Mode, SaasInfoInput, SaasStage, TechLevel } from "@/lib/schemas";
+import type { BusinessModel, Mode, ProjectKind, SaasInfoInput, SaasStage, TechLevel } from "@/lib/schemas";
 
 export type Step = 1 | 2 | 3 | 4 | 5;
 
 export type SaasForm = {
+  kind: ProjectKind;
   name: string;
   description: string;
   niche: string;
@@ -24,6 +25,7 @@ export type SaasForm = {
 };
 
 export const emptyForm: SaasForm = {
+  kind: "saas",
   name: "",
   description: "",
   niche: "",
@@ -44,6 +46,7 @@ const emptyRecs: Recs = { agent: [], skill: [], mcp: [] };
 
 export function formToInput(form: SaasForm): SaasInfoInput {
   return {
+    kind: form.kind ?? "saas",
     name: form.name,
     description: form.description,
     niche: form.niche,

@@ -115,9 +115,12 @@ describe("KitGeneration", () => {
 
   it("download parcial: empacota no meio da geração, com o resto no modelo base", async () => {
     stubFetch(ok, 40);
-    const gen = new KitGeneration({ mode: "existente", saas, ids, ai: true }, () => {});
+    let firstDone!: () => void;
+    const someDone = new Promise<void>((r) => (firstDone = r));
+    // Espera o primeiro item ficar pronto (sem depender de relógio): alguns prontos, outros não.
+    const gen = new KitGeneration({ mode: "existente", saas, ids, ai: true }, (p) => p.done >= 1 && p.done < p.total && firstDone());
     const running = gen.run(new AbortController().signal);
-    await new Promise((r) => setTimeout(r, 60)); // alguns itens prontos, outros não
+    await someDone;
     const partial = await gen.pack();
     expect(partial.partial).toBe(true);
     const zip = await JSZip.loadAsync(await partial.zip.arrayBuffer());

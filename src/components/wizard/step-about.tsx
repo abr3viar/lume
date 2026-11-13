@@ -15,7 +15,7 @@ const NICHES = ["Fintech", "Educação", "Saúde", "E-commerce", "RH", "Marketin
 const STACKS = ["Next.js", "React", "Node.js", "Python", "Django", "Laravel", "Ruby on Rails", "Supabase", "Firebase", "PostgreSQL", "Vercel", "AWS", "Flutter", "React Native", "WordPress", "Bubble"];
 
 type Errors = Partial<Record<keyof SaasForm, string>>;
-const ORDER: (keyof SaasForm)[] = ["name", "task", "details", "description", "model", "niche", "problem", "stage", "stack", "goal", "techLevel"];
+const ORDER: (keyof SaasForm)[] = ["kind", "name", "task", "details", "description", "model", "niche", "problem", "stage", "stack", "goal", "techLevel"];
 
 export function StepAbout() {
   const mode = useKit((s) => s.mode)!;
@@ -30,9 +30,10 @@ export function StepAbout() {
   const zero = mode === "zero";
   const task = isTaskMode(mode);
   const bug = mode === "erro";
-  const laterHint = "Pode deixar em branco, o Claude vai perguntar depois.";
+  const site = !task && form.kind === "site";
+  const laterHint = "Pode deixar em branco, a IA vai perguntar depois.";
   const mainField: "task" | "description" = task ? "task" : "description";
-  const examples = brand.examples[task ? (bug ? "erro" : "ajuste") : "saas"];
+  const examples = brand.examples[task ? (bug ? "erro" : "ajuste") : site ? "site" : "saas"];
   const vague = isVague(form[mainField]);
   // "Mais detalhes" abre sozinho no modo projeto existente ou se já houver algo preenchido.
   const [detailsOpen, setDetailsOpen] = useState(() =>
@@ -118,7 +119,7 @@ export function StepAbout() {
       id="f-stack"
       label="Stack"
       optional="opcional"
-      hint={zero ? laterHint : task ? "Ajuda o Claude a achar os arquivos e comandos certos." : "Toque para marcar ou escreva outra e aperte Enter."}
+      hint={zero ? laterHint : task ? "Ajuda a IA a achar os arquivos e comandos certos." : "Toque para marcar ou escreva outra e aperte Enter."}
     >
       <div className="flex flex-wrap gap-2" role="group" aria-label="Tecnologias">
         {[...new Set([...STACKS, ...form.stack])].map((s) => (
@@ -180,9 +181,9 @@ export function StepAbout() {
 
   return (
     <div className="wrap py-12 lg:py-16">
-      <StepHeader title={bug ? "Conte qual é o erro" : task ? "Conte o que você quer mudar" : "Conte sobre o seu SaaS"}>
+      <StepHeader title={bug ? "Conte qual é o erro" : task ? "Conte o que você quer mudar" : "Conte sobre o seu projeto"}>
         {bug
-          ? "Só o nome do projeto e o erro são obrigatórios. Quanto mais detalhes de como reproduzir, mais rápido o Claude acha a causa."
+          ? "Só o nome do projeto e o erro são obrigatórios. Quanto mais detalhes de como reproduzir, mais rápido a IA acha a causa."
           : task
             ? "Só o nome do projeto e a mudança são obrigatórios. O kit vem enxuto, focado nessa tarefa."
             : "Só três coisas são obrigatórias: o nome, o que o produto faz e para quem. O resto é opcional e deixa as sugestões mais certeiras."}
@@ -258,9 +259,21 @@ export function StepAbout() {
           </>
         ) : (
           <>
+            <Field id="f-kind" label="O que você está fazendo">
+              <Segmented
+                id="f-kind"
+                label="O que você está fazendo"
+                value={form.kind ?? "saas"}
+                onChange={(v) => update({ kind: v, ...(v === "site" ? { model: "" } : {}) })}
+                options={[
+                  { value: "saas", label: "SaaS", hint: "produto com conta e assinatura" },
+                  { value: "site", label: "Site", hint: "landing, institucional, portfólio, blog ou loja" },
+                ]}
+              />
+            </Field>
             <Field
               id="f-description"
-              label="O que o produto faz e para quem"
+              label={site ? "O que o site faz e para quem" : "O que o produto faz e para quem"}
               hint="Uma ou duas frases: o que faz, para quem e qual problema resolve."
               error={errors.description}
               counter={{ value: form.description.length, max: MAX_FIELD }}
@@ -278,6 +291,7 @@ export function StepAbout() {
               {vagueBox}
             </Field>
 
+            {!site && (
             <Field id="f-model" label="Modelo de negócio" error={errors.model}>
               <Segmented
                 id="f-model"
@@ -292,6 +306,7 @@ export function StepAbout() {
                 ]}
               />
             </Field>
+            )}
           </>
         )}
 
@@ -303,7 +318,7 @@ export function StepAbout() {
         >
           <summary className="flex cursor-pointer list-none items-center justify-between gap-4 rounded-3xl px-5 py-4 text-sm font-medium [&::-webkit-details-marker]:hidden">
             <span>
-              Mais detalhes <span className="font-normal text-ink-3">(opcional, {zero ? "o Claude pergunta depois" : "deixa o kit mais certeiro"})</span>
+              Mais detalhes <span className="font-normal text-ink-3">(opcional, {zero ? "a IA pergunta depois" : "deixa o kit mais certeiro"})</span>
             </span>
             <ChevronDown className="size-4 text-ink-3 transition-transform group-open:rotate-180" aria-hidden />
           </summary>
@@ -313,7 +328,7 @@ export function StepAbout() {
                 id="f-description"
                 label="O que o produto faz"
                 optional="opcional"
-                hint="Uma frase de contexto ajuda o Claude a entender o projeto."
+                hint="Uma frase de contexto ajuda a IA a entender o projeto."
                 error={errors.description}
                 counter={{ value: form.description.length, max: MAX_FIELD }}
               >

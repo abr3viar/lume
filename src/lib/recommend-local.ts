@@ -293,6 +293,13 @@ export function scoreCatalog(req: Pick<RecommendRequest, "mode" | "saas">): Scor
     bump("mcp", r.mcp, 7, `sua stack usa ${r.label}`);
     bump("agent", r.agent, 3, `sua stack usa ${r.label}`);
   }
+  if (saas.kind === "site") {
+    // Site comum: sem assinatura nem conta de usuário. Valem copy, SEO, performance, design e deploy.
+    bump("agent", ["copy-landing-page", "seo-conteudo", "performance-web", "design-system-ui", "planejamento-deploy"], 8, "é um site, e o que pesa é conteúdo, busca, velocidade e visual");
+    bump("skill", ["auditoria-seo-on-page", "checklist-acessibilidade", "checklist-lancamento"], 8, "é um site e precisa ser encontrado no Google");
+    bump("mcp", ["vercel", "posthog"], 3, "é um site publicado e medido");
+    bump("agent", ["churn-retencao", "cobranca-inadimplencia", "pricing-planos", "onboarding-usuarios", "metricas-saas", "customer-success", "gamificacao"], -30);
+  }
   if (saas.stage) {
     const label = STAGE_LABEL[saas.stage].toLowerCase();
     const b = STAGE_BOOST[saas.stage];

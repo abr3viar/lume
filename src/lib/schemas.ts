@@ -54,6 +54,11 @@ export const techLevelSchema = z.enum(["iniciante", "intermediario", "avancado"]
 });
 
 export type BusinessModel = z.infer<typeof businessModelSchema>;
+
+/** O que está sendo feito: um SaaS (produto com assinatura/conta) ou um site comum (landing, institucional, portfólio, blog, loja). */
+export const projectKindSchema = z.enum(["saas", "site"]);
+export type ProjectKind = z.infer<typeof projectKindSchema>;
+export const KIND_NOUN: Record<ProjectKind, string> = { saas: "SaaS", site: "site" };
 export type SaasStage = z.infer<typeof saasStageSchema>;
 export type TechLevel = z.infer<typeof techLevelSchema>;
 
@@ -71,6 +76,7 @@ export const TECH_LABEL: Record<TechLevel, string> = {
 
 /** Campos do formulário "Sobre o SaaS". Opcionalidade depende do modo (ver `saasInfoSchemaFor`). */
 const baseShape = {
+  kind: projectKindSchema.default("saas"),
   name: text("O nome", 2).pipe(z.string().max(80, "O nome pode ter no máximo 80 caracteres.")),
   description: text("A descrição").default(""),
   niche: text("O nicho").default(""),
@@ -109,7 +115,7 @@ export function saasInfoSchemaFor(mode: Mode) {
     }
     if (v.description.length < 10)
       ctx.addIssue({ code: "custom", path: ["description"], message: "A descrição precisa ter pelo menos 10 caracteres." });
-    if (!v.model) ctx.addIssue({ code: "custom", path: ["model"], message: "Escolha o modelo do seu SaaS." });
+    if (v.kind === "saas" && !v.model) ctx.addIssue({ code: "custom", path: ["model"], message: "Escolha o modelo do seu SaaS." });
 
   });
 }

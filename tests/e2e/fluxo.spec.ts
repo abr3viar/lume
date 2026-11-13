@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 
 test("landing apresenta o produto e leva ao assistente", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { level: 1, name: "Acenda o seu SaaS." })).toBeVisible();
+  await expect(page.getByRole("heading", { level: 1, name: "Acenda o seu projeto." })).toBeVisible();
   await expect(page.getByText("Lume. Agentes, skills e MCPs são pontos de partida")).toBeVisible();
   await page.getByRole("link", { name: "Acender meu kit" }).first().click();
   await expect(page).toHaveURL(/\/montar$/);
@@ -128,7 +128,7 @@ test("modo do zero: kit pronto, Modo Descoberta e briefing", async ({ page }) =>
   await page.goto("/montar");
   await page.getByRole("radio", { name: /Vou começar do zero/ }).click();
   await page.getByTestId("mais-detalhes").locator("summary").click();
-  await expect(page.getByText("Pode deixar em branco, o Claude vai perguntar depois.").first()).toBeVisible();
+  await expect(page.getByText("Pode deixar em branco, a IA vai perguntar depois.").first()).toBeVisible();
   await page.getByLabel("Nome do produto").fill("Treino em Casa");
   await page.getByLabel("O que o produto faz e para quem").fill("App de treinos curtos em casa com acompanhamento de progresso.");
   await page.getByRole("radio", { name: /^B2C vende para pessoas/ }).click();

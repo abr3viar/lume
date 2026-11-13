@@ -15,7 +15,7 @@ const OPTIONS: { value: Mode; title: string; text: string; points: string[]; Ico
     title: "Já tenho um projeto",
     text: "Você já tem código. O kit será adaptado ao que existe.",
     points: [
-      "O Claude analisa seu código antes de agir",
+      "A IA analisa seu código antes de agir",
       "Agentes e skills ajustados aos seus comandos",
       "Plano de execução na ordem certa",
     ],
@@ -24,7 +24,7 @@ const OPTIONS: { value: Mode; title: string; text: string; points: string[]; Ico
   {
     value: "zero",
     title: "Vou começar do zero",
-    text: "Você quer construir o SaaS junto com o Claude Code.",
+    text: "Você quer construir o projeto junto com a sua IA.",
     points: [
       "Modo Descoberta: entrevista antes de construir",
       "Briefing pronto para preencher junto",
@@ -70,7 +70,7 @@ export function StepMode() {
   return (
     <div className="wrap py-12 lg:py-16">
       <StepHeader title="Como você vai usar o kit?">
-        Para construir, adaptar, consertar ou ajustar. Essa escolha muda o que vai no pacote e como o Claude começa a trabalhar. Dá para trocar depois.
+        Para construir, adaptar, consertar ou ajustar. Essa escolha muda o que vai no pacote e como a IA começa a trabalhar. Dá para trocar depois.
       </StepHeader>
       <RadioGroup.Root
         value={mode ?? ""}

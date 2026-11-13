@@ -17,6 +17,7 @@ export function saasInfoBlock(saas: SaasInfo, mode: Mode): string {
   return [
     "<saas_info>",
     f("Modo", MODE_DESCRIPTION[mode]),
+    f("Tipo de projeto", saas.kind === "site" ? "site comum (landing, institucional, portfólio, blog ou loja), não é um SaaS" : "SaaS"),
     f("Nome", saas.name),
     f("Descrição", saas.description),
     f("Nicho", saas.niche),
@@ -45,6 +46,7 @@ ${DATA_ONLY_RULE}
 Critérios de escolha:
 - Relevância para o problema, o nicho, o modelo (B2B/B2C), o estágio e o objetivo do momento.
 - No modo "começando do zero", priorize os agentes de fundação (arquiteto de produto, definição de MVP, modelagem de dados, design system, planejamento de deploy) e a skill brief-do-projeto.
+- Quando o tipo de projeto for "site comum", não há assinatura, conta de usuário nem métricas de SaaS: priorize copy, SEO, performance, design system, acessibilidade, deploy e analytics, e deixe de fora churn, cobrança, pricing de planos, onboarding de usuários e métricas de SaaS.
 - No modo "consertar um erro", o kit é pequeno e focado: priorize triagem de bugs, geração de testes, revisão de código, as skills plano-testes e revisao-pr, e MCPs que ajudam a investigar (Sentry, Playwright, GitHub) conforme a stack. Só inclua agentes de negócio se o erro for desse assunto.
 - No modo "atualização rápida", o kit é pequeno e focado na mudança pedida: revisão de código, padrão de commits e changelog, testes, e o especialista do assunto da mudança (ex.: copy para textos, design system para telas, LGPD para dados pessoais). Nada de agentes de fundação.
 - Nos modos de erro e atualização, a reason deve citar a tarefa descrita.

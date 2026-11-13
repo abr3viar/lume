@@ -15,7 +15,7 @@ import { StepReview } from "./step-review";
 
 const STEPS: { n: Step; label: string }[] = [
   { n: 1, label: "Modo" },
-  { n: 2, label: "Sobre o SaaS" },
+  { n: 2, label: "Sobre o projeto" },
   { n: 3, label: "Recomendações" },
   { n: 4, label: "Revisão" },
   { n: 5, label: "Geração" },

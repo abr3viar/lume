@@ -79,7 +79,7 @@ export function ItemCard({ kind, rec, index = 0 }: { kind: ItemKind; rec: Recomm
       <p className="mt-3 text-pretty text-sm leading-relaxed text-ink-2">{meta.description}</p>
 
       <div className="mt-4 rounded-2xl bg-surface px-4 py-3 [[data-theme=dark]_&]:bg-surface-2">
-        <p className="text-xs font-medium text-ink">Por que faz sentido para o seu SaaS</p>
+        <p className="text-xs font-medium text-ink">Por que faz sentido para o seu projeto</p>
         <p className="mt-1 text-pretty text-sm leading-relaxed text-ink-2">{rec.reason}</p>
       </div>
 

@@ -852,6 +852,11 @@ Bom trabalho, e que o ${saas.name} acenda.
 
 // ─────────────────────────── montagem completa ───────────────────────────
 
+/** Kit de site comum: troca "SaaS" por "site" nos textos e tira a linha de modelo de negócio. */
+export function siteify(text: string): string {
+  return text.replace(/^\| \*\*Modelo\*\* \|[^\n]*\n/m, "").replace(/\bSaaS\b/g, "site");
+}
+
 /** Arquivos da skill "metodo-lume" (vai em todo kit) dentro de uma pasta de skills. */
 function lumeSkillFiles(dir: string, input: KitInput, t: TargetProfile): KitFile[] {
   const fm = frontmatter({ name: LUME_SKILL_ID, description: yamlString(LUME_SKILL_DESCRIPTION) });
@@ -946,7 +951,8 @@ export function buildKitFiles(input: KitInput): KitFile[] {
   const root = kitRoot(input.saas);
   const t = targetOf(input.target);
   const claude = t.id === "claude-code";
-  const doc = (text: string) => retarget(text, t);
+  const site = input.saas.kind === "site";
+  const doc = (text: string) => retarget(site ? siteify(text) : text, t);
 
   const core: KitFile[] = claude
     ? [
@@ -957,7 +963,7 @@ export function buildKitFiles(input: KitInput): KitFile[] {
       ]
     : toolFiles(input, t);
   const instructions = claude
-    ? claudeMd(input)
+    ? doc(claudeMd(input))
     : doc(claudeMd(input)).replace(`${t.skillsDir.replace(/\/$/, "")}/${LUME_SKILL_ID}/`, `${t.skillsDir}${LUME_SKILL_ID}/`);
   core.push({ path: t.instructions, content: instructions });
   // Com ferramentas para conectar, a IA pergunta antes de mexer no projeto (linha logo antes do "Fale comigo").
@@ -977,7 +983,8 @@ export function buildKitFiles(input: KitInput): KitFile[] {
   const tree = `${root}/\n${renderTreeText(buildTree(allPaths))}`;
   // Itens "não personalizados" só fazem sentido quando houve tentativa de personalização.
   const np = input.personalizationAttempted ? notPersonalized : [];
-  core.push({ path: "LEIA-ME.md", content: claude ? readmeMd(input, tree, np) : targetReadme(input, t, tree, np) });
+  const readme = claude ? readmeMd(input, tree, np) : targetReadme(input, t, tree, np);
+  core.push({ path: "LEIA-ME.md", content: site ? siteify(readme) : readme });
 
   return core.map((f) => {
     if (!isSafeZipPath(f.path)) throw new Error(`Caminho inseguro no kit: ${f.path}`);
