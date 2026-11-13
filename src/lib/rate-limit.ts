@@ -73,4 +73,5 @@ export function clientIp(headers: Headers): string {
 export const LIMITS = {
   recommend: { limit: 12, windowSec: 600 },
   personalize: { limit: 150, windowSec: 600 },
+  reference: { limit: 20, windowSec: 600 },
 } as const;

@@ -9,6 +9,7 @@ import { isVague } from "@/lib/vague";
 import { formToInput, useKit, type SaasForm } from "@/store/kit-store";
 import { Chip, Field, Segmented, TextArea, TextInput } from "./fields";
 import { useStepNext } from "./step-actions";
+import { ReferenceSites } from "./reference-sites";
 import { StepFooter, StepHeader } from "./step-header";
 
 const NICHES = ["Fintech", "Educação", "Saúde", "E-commerce", "RH", "Marketing", "Jurídico", "Logística", "Imobiliário", "Agro", "Turismo", "Restaurantes"];
@@ -309,6 +310,8 @@ export function StepAbout() {
             )}
           </>
         )}
+
+        {!bug && <ReferenceSites />}
 
         <details
           className="group rounded-3xl border border-line [&[open]]:bg-surface/40"

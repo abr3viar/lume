@@ -3,6 +3,7 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import type { KitTarget } from "@/lib/kit/targets";
+import type { SiteReference } from "@/lib/reference/extract";
 import type { ItemKind } from "@/data/catalog/schema";
 import type { RecommendedItem } from "@/lib/ai/recommend-core";
 import type { BusinessModel, Mode, ProjectKind, SaasInfoInput, SaasStage, TechLevel } from "@/lib/schemas";
@@ -81,6 +82,9 @@ type KitState = {
   /** Ferramenta de IA onde o kit vai rodar (Claude Code, Codex, Gemini CLI, Cursor, Grok ou outra). */
   target: KitTarget;
   setTarget: (t: KitTarget) => void;
+  /** Sites de referência visual já extraídos (no máximo 3). */
+  refs: SiteReference[];
+  setRefs: (refs: SiteReference[]) => void;
   setStep: (s: Step) => void;
   setMode: (m: Mode) => void;
   setForm: (patch: Partial<SaasForm>) => void;
@@ -107,6 +111,8 @@ export const useKit = create<KitState>()(
       cart: emptyCart,
       target: "claude-code",
       setTarget: (t) => set({ target: t }),
+      refs: [],
+      setRefs: (refs) => set({ refs: refs.slice(0, 3) }),
       setStep: (s) => set((st) => ({ step: s, maxStep: (Math.max(st.maxStep, s) as Step) })),
       setMode: (m) => set({ mode: m }),
       setForm: (patch) => set((st) => ({ form: { ...st.form, ...patch } })),
@@ -139,7 +145,7 @@ export const useKit = create<KitState>()(
       remove: (kind, id) => set((st) => ({ cart: { ...st.cart, [kind]: st.cart[kind].filter((x) => x !== id) } })),
       clearCart: () => set({ cart: emptyCart }),
       reset: () =>
-        set({ step: 1, maxStep: 1, mode: null, form: emptyForm, recs: emptyRecs, recsKey: null, recsSource: null, aiProvider: null, cart: emptyCart }),
+        set({ step: 1, maxStep: 1, mode: null, form: emptyForm, recs: emptyRecs, recsKey: null, recsSource: null, aiProvider: null, cart: emptyCart, refs: [] }),
     }),
     {
       name: "lume-kit-v1",
@@ -162,6 +168,7 @@ export const useKit = create<KitState>()(
         aiProvider: s.aiProvider,
         cart: s.cart,
         target: s.target,
+        refs: s.refs,
       }),
     },
   ),

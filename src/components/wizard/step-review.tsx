@@ -31,6 +31,7 @@ export function StepReview() {
   const recsSource = useKit((s) => s.recsSource);
   const aiProvider = useKit((s) => s.aiProvider);
   const target = useKit((s) => s.target);
+  const refs = useKit((s) => s.refs);
   const ai = recsSource !== "local";
   const total = cartCount(cart);
   const origins = useMemo(() => itemOrigins(cart, recs, recsSource), [cart, recs, recsSource]);
@@ -46,8 +47,9 @@ export function StepReview() {
     input.origins = origins;
     input.aiProvider = aiProvider;
     input.target = target;
+    input.references = refs;
     return { files: buildKitFiles(input), root: kitRoot(saas.data) };
-  }, [saas, mode, cart, origins, aiProvider, target]);
+  }, [saas, mode, cart, origins, aiProvider, target, refs]);
 
   const go = () => {
     if (total === 0 || !saas.success) return;

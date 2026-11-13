@@ -121,6 +121,7 @@ type Params = {
   origins?: KitInput["origins"];
   aiProvider?: KitInput["aiProvider"];
   target?: KitInput["target"];
+  references?: KitInput["references"];
 };
 
 /**
@@ -142,6 +143,7 @@ export class KitGeneration {
     this.input.origins = params.origins;
     this.input.aiProvider = params.aiProvider;
     this.input.target = params.target;
+    this.input.references = params.references;
     const verb = params.ai ? ["Personalizando o agente", "Adaptando a skill"] : ["Preparando o agente", "Preparando a skill"];
     this.tasks = [
       ...this.input.agents.map((a) => ({ key: `agent:${a.item.id}`, label: `${verb[0]} ${a.item.name}`, state: "pendente" as const })),
